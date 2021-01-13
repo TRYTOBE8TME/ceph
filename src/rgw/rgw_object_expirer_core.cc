@@ -217,11 +217,11 @@ int RGWObjectExpirer::garbage_single_object(objexp_hint_entry& hint)
   int ret = init_bucket_info(hint.tenant, hint.bucket_name,
           hint.bucket_id, bucket_info);
   if (-ENOENT == ret) {
-    ldout(store->ctx(), 15) << "NOTICE: cannot find bucket = " \
+    ldpp_dout(dpp, 15) << "NOTICE: cannot find bucket = " \
         << hint.bucket_name << ". The object must be already removed" << dendl;
     return -ERR_PRECONDITION_FAILED;
   } else if (ret < 0) {
-    ldout(store->ctx(),  1) << "ERROR: could not init bucket = " \
+    ldpp_dout(dpp, 1) << "ERROR: could not init bucket = " \
         << hint.bucket_name << "due to ret = " << ret << dendl;
     return ret;
   }
@@ -251,12 +251,12 @@ void RGWObjectExpirer::garbage_chunk(list<cls_timeindex_entry>& entries,      /*
        ++iter)
   {
     objexp_hint_entry hint;
-    ldout(store->ctx(), 15) << "got removal hint for: " << iter->key_ts.sec() \
+    ldpp_dout(dpp, 15) << "got removal hint for: " << iter->key_ts.sec() \
         << " - " << iter->key_ext << dendl;
 
     int ret = objexp_hint_parse(store->getRados()->ctx(), *iter, &hint);
     if (ret < 0) {
-      ldout(store->ctx(), 1) << "cannot parse removal hint for " << hint.obj_key << dendl;
+      ldpp_dout(dpp, 1) << "cannot parse removal hint for " << hint.obj_key << dendl;
       continue;
     }
 
@@ -264,9 +264,9 @@ void RGWObjectExpirer::garbage_chunk(list<cls_timeindex_entry>& entries,      /*
      * We can silently ignore that and move forward. */
     ret = garbage_single_object(hint);
     if (ret == -ERR_PRECONDITION_FAILED) {
-      ldout(store->ctx(), 15) << "not actual hint for object: " << hint.obj_key << dendl;
+      ldpp_dout(dpp, 15) << "not actual hint for object: " << hint.obj_key << dendl;
     } else if (ret < 0) {
-      ldout(store->ctx(), 1) << "cannot remove expired object: " << hint.obj_key << dendl;
+      ldpp_dout(dpp, 1) << "cannot remove expired object: " << hint.obj_key << dendl;
     }
 
     need_trim = true;
@@ -319,7 +319,7 @@ bool RGWObjectExpirer::process_single_shard(const string& shard,
 
   int ret = l.lock_exclusive(&store->getRados()->objexp_pool_ctx, shard);
   if (ret == -EBUSY) { /* already locked by another processor */
-    dout(5) << __func__ << "(): failed to acquire lock on " << shard << dendl;
+    ldpp_dout(dpp, 5) << __func__ << "(): failed to acquire lock on " << shard << dendl;
     return false;
   }
 
@@ -332,7 +332,7 @@ bool RGWObjectExpirer::process_single_shard(const string& shard,
                                      num_entries, marker, entries,
                                      &out_marker, &truncated);
     if (ret < 0) {
-      ldout(cct, 10) << "cannot get removal hints from shard: " << shard
+      ldpp_dout(dpp, 10) << "cannot get removal hints from shard: " << shard
                      << dendl;
       continue;
     }
@@ -369,7 +369,7 @@ bool RGWObjectExpirer::inspect_all_shards(const utime_t& last_run,
     string shard;
     objexp_get_shard(i, &shard);
 
-    ldout(store->ctx(), 20) << "processing shard = " << shard << dendl;
+    ldpp_dout(dpp, 20) << "processing shard = " << shard << dendl;
 
     if (! process_single_shard(shard, last_run, round_start)) {
       all_done = false;

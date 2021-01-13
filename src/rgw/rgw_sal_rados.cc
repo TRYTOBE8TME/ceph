@@ -109,7 +109,7 @@ int RGWRadosBucket::remove_bucket(bool delete_children, std::string prefix, std:
 	return ret;
 
     if (!results.objs.empty() && !delete_children) {
-      lderr(store->ctx()) << "ERROR: could not remove non-empty bucket " << info.bucket.name <<
+      ldpp_dout(dpp, -1) << "ERROR: could not remove non-empty bucket " << info.bucket.name <<
 	dendl;
       return -ENOTEMPTY;
     }
@@ -143,14 +143,14 @@ int RGWRadosBucket::remove_bucket(bool delete_children, std::string prefix, std:
   // remain is detrius from a prior bug
   ret = store->getRados()->delete_bucket(info, ot, y, !delete_children);
   if (ret < 0) {
-    lderr(store->ctx()) << "ERROR: could not remove bucket " <<
+    ldpp_dout(dpp, -1) << "ERROR: could not remove bucket " <<
       info.bucket.name << dendl;
     return ret;
   }
 
   ret = store->ctl()->bucket->unlink_bucket(info.owner, info.bucket, y, false);
   if (ret < 0) {
-    lderr(store->ctx()) << "ERROR: unable to remove user bucket information" << dendl;
+    ldpp_dout(dpp, -1) << "ERROR: unable to remove user bucket information" << dendl;
   }
 
   if (forward_to_master) {

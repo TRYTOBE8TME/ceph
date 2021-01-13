@@ -496,7 +496,7 @@ int RGWOrphanSearch::build_linked_oids_for_bucket(const string& bucket_instance_
   int ret = rgw_bucket_parse_bucket_key(store->ctx(), bucket_instance_id,
                                         &orphan_bucket, &shard_id);
   if (ret < 0) {
-    ldout(store->ctx(),0) << __func__ << " failed to parse bucket instance: "
+    ldpp_dout(dpp, 0) << __func__ << " failed to parse bucket instance: "
                  << bucket_instance_id << " skipping" << dendl;
     return ret;
   }
@@ -509,19 +509,19 @@ int RGWOrphanSearch::build_linked_oids_for_bucket(const string& bucket_instance_
       /* probably raced with bucket removal */
       return 0;
     }
-    lderr(store->ctx()) << __func__ << ": ERROR: RGWRados::get_bucket_instance_info() returned ret=" << ret << dendl;
+    ldpp_dout(dpp, -1) << __func__ << ": ERROR: RGWRados::get_bucket_instance_info() returned ret=" << ret << dendl;
     return ret;
   }
 
   if (cur_bucket_info.bucket.bucket_id != orphan_bucket.bucket_id) {
-    ldout(store->ctx(), 0) << __func__ << ": Skipping stale bucket instance: "
+    ldpp_dout(dpp, 0) << __func__ << ": Skipping stale bucket instance: "
                            << orphan_bucket.name << ": "
                            << orphan_bucket.bucket_id << dendl;
     return 0;
   }
 
   if (cur_bucket_info.reshard_status == cls_rgw_reshard_status::IN_PROGRESS) {
-    ldout(store->ctx(), 0) << __func__ << ": reshard in progress. Skipping "
+    ldpp_dout(dpp, 0) << __func__ << ": reshard in progress. Skipping "
                            << orphan_bucket.name << ": "
                            << orphan_bucket.bucket_id << dendl;
     return 0;
@@ -534,11 +534,11 @@ int RGWOrphanSearch::build_linked_oids_for_bucket(const string& bucket_instance_
       /* probably raced with bucket removal */
       return 0;
     }
-    lderr(store->ctx()) << __func__ << ": ERROR: RGWRados::get_bucket_instance_info() returned ret=" << ret << dendl;
+    ldpp_dout(dpp, -1) << __func__ << ": ERROR: RGWRados::get_bucket_instance_info() returned ret=" << ret << dendl;
     return ret;
   }
 
-  ldout(store->ctx(), 10) << "building linked oids for bucket instance: " << bucket_instance_id << dendl;
+  ldpp_dout(dpp, 10) << "building linked oids for bucket instance: " << bucket_instance_id << dendl;
   RGWRados::Bucket target(store->getRados(), bucket_info);
   RGWRados::Bucket::List list_op(&target);
 
@@ -564,16 +564,16 @@ int RGWOrphanSearch::build_linked_oids_for_bucket(const string& bucket_instance_
     for (vector<rgw_bucket_dir_entry>::iterator iter = result.begin(); iter != result.end(); ++iter) {
       rgw_bucket_dir_entry& entry = *iter;
       if (entry.key.instance.empty()) {
-        ldout(store->ctx(), 20) << "obj entry: " << entry.key.name << dendl;
+        ldpp_dout(dpp, 20) << "obj entry: " << entry.key.name << dendl;
       } else {
-        ldout(store->ctx(), 20) << "obj entry: " << entry.key.name << " [" << entry.key.instance << "]" << dendl;
+        ldpp_dout(dpp, 20) << "obj entry: " << entry.key.name << " [" << entry.key.instance << "]" << dendl;
       }
 
-      ldout(store->ctx(), 20) << __func__ << ": entry.key.name=" << entry.key.name << " entry.key.instance=" << entry.key.instance << dendl;
+      ldpp_dout(dpp, 20) << __func__ << ": entry.key.name=" << entry.key.name << " entry.key.instance=" << entry.key.instance << dendl;
 
       if (!detailed_mode &&
           entry.meta.accounted_size <= (uint64_t)store->ctx()->_conf->rgw_max_chunk_size) {
-        ldout(store->ctx(),5) << __func__ << "skipping stat as the object " << entry.key.name
+        ldpp_dout(dpp, 5) << __func__ << "skipping stat as the object " << entry.key.name
                               << "fits in a head" << dendl;
         continue;
       }
@@ -627,7 +627,7 @@ int RGWOrphanSearch::build_linked_oids_index()
   map<int, list<string> > oids;
   map<int, string>::iterator iter = buckets_instance_index.find(search_stage.shard);
   for (; iter != buckets_instance_index.end(); ++iter) {
-    ldout(store->ctx(), 0) << "building linked oids index: " << iter->first << "/" << buckets_instance_index.size() << dendl;
+    ldpp_dout(dpp, 0) << "building linked oids index: " << iter->first << "/" << buckets_instance_index.size() << dendl;
     bool truncated;
 
     string oid = iter->second;
@@ -811,7 +811,7 @@ int RGWOrphanSearch::run()
   switch (search_stage.stage) {
     
     case ORPHAN_SEARCH_STAGE_INIT:
-      ldout(store->ctx(), 0) << __func__ << "(): initializing state" << dendl;
+      ldpp_dout(dpp, 0) << __func__ << "(): initializing state" << dendl;
       search_stage = RGWOrphanSearchStage(ORPHAN_SEARCH_STAGE_LSPOOL);
       r = save_state();
       if (r < 0) {
@@ -820,7 +820,7 @@ int RGWOrphanSearch::run()
       }
       // fall through
     case ORPHAN_SEARCH_STAGE_LSPOOL:
-      ldout(store->ctx(), 0) << __func__ << "(): building index of all objects in pool" << dendl;
+      ldpp_dout(dpp, 0) << __func__ << "(): building index of all objects in pool" << dendl;
       r = build_all_oids_index();
       if (r < 0) {
         lderr(store->ctx()) << __func__ << ": ERROR: build_all_objs_index returned ret=" << r << dendl;
@@ -836,7 +836,7 @@ int RGWOrphanSearch::run()
       // fall through
 
     case ORPHAN_SEARCH_STAGE_LSBUCKETS:
-      ldout(store->ctx(), 0) << __func__ << "(): building index of all bucket indexes" << dendl;
+      ldpp_dout(dpp, 0) << __func__ << "(): building index of all bucket indexes" << dendl;
       r = build_buckets_instance_index();
       if (r < 0) {
         lderr(store->ctx()) << __func__ << ": ERROR: build_all_objs_index returned ret=" << r << dendl;
@@ -1147,7 +1147,7 @@ int RGWRadosList::process_bucket(
   const std::string& prefix,
   const std::set<rgw_obj_key>& entries_filter)
 {
-  ldout(store->ctx(), 10) << "RGWRadosList::" << __func__ <<
+  ldpp_dout(dpp, 10) << "RGWRadosList::" << __func__ <<
     " bucket_instance_id=" << bucket_instance_id <<
     ", prefix=" << prefix <<
     ", entries_filter.size=" << entries_filter.size() << dendl;
@@ -1165,7 +1165,7 @@ int RGWRadosList::process_bucket(
       // probably raced with bucket removal
       return 0;
     }
-    lderr(store->ctx()) << __func__ <<
+    ldpp_dout(dpp, -1) << __func__ <<
       ": ERROR: RGWRados::get_bucket_instance_info() returned ret=" <<
       ret << dendl;
     return ret;
@@ -1210,13 +1210,13 @@ int RGWRadosList::process_bucket(
       rgw_bucket_dir_entry& entry = *iter;
 
       if (entry.key.instance.empty()) {
-        ldout(store->ctx(), 20) << "obj entry: " << entry.key.name << dendl;
+        ldpp_dout(dpp, 20) << "obj entry: " << entry.key.name << dendl;
       } else {
-        ldout(store->ctx(), 20) << "obj entry: " << entry.key.name <<
+        ldpp_dout(dpp, 20) << "obj entry: " << entry.key.name <<
 	  " [" << entry.key.instance << "]" << dendl;
       }
 
-      ldout(store->ctx(), 20) << __func__ << ": entry.key.name=" <<
+      ldpp_dout(dpp, 20) << __func__ << ": entry.key.name=" <<
 	entry.key.name << " entry.key.instance=" << entry.key.instance <<
 	dendl;
 
@@ -1385,7 +1385,7 @@ int RGWRadosList::run(const std::string& start_bucket_name)
 	  // bucket deletion race?
 	  return 0;
 	} if (ret < 0) {
-	  lderr(store->ctx()) << "RGWRadosList::" << __func__ <<
+	  ldpp_dout(dpp, -1) << "RGWRadosList::" << __func__ <<
 	    ": ERROR: process_bucket(); bucket_id=" <<
 	    bucket_id << " returned ret=" << ret << dendl;
 	}
@@ -1430,7 +1430,7 @@ int RGWRadosList::run(const std::string& start_bucket_name)
     // bucket deletion race?
     return 0;
   } else if (ret < 0) {
-    lderr(store->ctx()) << "RGWRadosList::" << __func__ <<
+    ldpp_dout(dpp, -1) << "RGWRadosList::" << __func__ <<
       ": ERROR: get_bucket_info returned ret=" << ret << dendl;
     return ret;
   }
@@ -1473,12 +1473,12 @@ int RGWRadosList::do_incomplete_multipart(
 			       &is_listing_truncated, null_yield);
     if (ret == -ENOENT) {
       // could bucket have been removed while this is running?
-      ldout(store->ctx(), 20) << "RGWRadosList::" << __func__ <<
+      ldpp_dout(dpp, 20) << "RGWRadosList::" << __func__ <<
 	": WARNING: call to list_objects of multipart namespace got ENOENT; "
 	"assuming bucket removal race" << dendl;
       break;
     } else if (ret < 0) {
-      lderr(store->ctx()) << "RGWRadosList::" << __func__ <<
+      ldpp_dout(dpp, -1) << "RGWRadosList::" << __func__ <<
 	": ERROR: list_objects op returned ret=" << ret << dendl;
       return ret;
     }
@@ -1494,7 +1494,7 @@ int RGWRadosList::do_incomplete_multipart(
 	}
 	entry.obj = obj;
 	uploads.push_back(entry);
-	ldout(store->ctx(), 20) << "RGWRadosList::" << __func__ <<
+	ldpp_dout(dpp, 20) << "RGWRadosList::" << __func__ <<
 	  " processing incomplete multipart entry " <<
 	  entry << dendl;
       }

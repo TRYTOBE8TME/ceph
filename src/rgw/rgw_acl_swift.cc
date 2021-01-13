@@ -137,7 +137,7 @@ int RGWAccessControlPolicy_SWIFT::add_grants(RGWUserCtl* const user_ctl,
 {
   for (const auto& uid : uids) {
     boost::optional<ACLGrant> grant;
-    ldout(cct, 20) << "trying to add grant for ACL uid=" << uid << dendl;
+    ldpp_dout(dpp, 20) << "trying to add grant for ACL uid=" << uid << dendl;
 
     /* Let's check whether the item has a separator potentially indicating
      * a special meaning (like an HTTP referral-based grant). */
@@ -189,7 +189,7 @@ int RGWAccessControlPolicy_SWIFT::create(RGWUserCtl* const user_ctl,
     std::vector<std::string> uids;
     int r = parse_list(read_list, uids);
     if (r < 0) {
-      ldout(cct, 0) << "ERROR: parse_list for read returned r="
+      ldpp_dout(dpp, 0) << "ERROR: parse_list for read returned r="
                     << r << dendl;
       return r;
     }
@@ -206,7 +206,7 @@ int RGWAccessControlPolicy_SWIFT::create(RGWUserCtl* const user_ctl,
     std::vector<std::string> uids;
     int r = parse_list(write_list, uids);
     if (r < 0) {
-      ldout(cct, 0) << "ERROR: parse_list for write returned r="
+      ldpp_dout(dpp, 0) << "ERROR: parse_list for write returned r="
                     << r << dendl;
       return r;
     }
@@ -336,7 +336,7 @@ bool RGWAccessControlPolicy_SWIFTAcct::create(RGWUserCtl * const user_ctl,
   JSONParser parser;
 
   if (!parser.parse(acl_str.c_str(), acl_str.length())) {
-    ldout(cct, 0) << "ERROR: JSONParser::parse returned error=" << dendl;
+    ldpp_dout(dpp, 0) << "ERROR: JSONParser::parse returned error=" << dendl;
     return false;
   }
 

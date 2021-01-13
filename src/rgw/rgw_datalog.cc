@@ -717,7 +717,7 @@ int RGWDataChangesLog::add_entry(const RGWBucketInfo& bucket_info, int shard_id)
 
   std::unique_lock sl(status->lock);
 
-  ldout(cct, 20) << "RGWDataChangesLog::add_entry() bucket.name=" << bucket.name
+  ldpp_dout(dpp, 20) << "RGWDataChangesLog::add_entry() bucket.name=" << bucket.name
 		 << " shard_id=" << shard_id << " now=" << now
 		 << " cur_expiration=" << status->cur_expiration << dendl;
 
@@ -768,7 +768,7 @@ int RGWDataChangesLog::add_entry(const RGWBucketInfo& bucket_info, int shard_id)
     change.timestamp = now;
     encode(change, bl);
 
-    ldout(cct, 20) << "RGWDataChangesLog::add_entry() sending update with now=" << now << " cur_expiration=" << expiration << dendl;
+    ldpp_dout(dpp, 20) << "RGWDataChangesLog::add_entry() sending update with now=" << now << " cur_expiration=" << expiration << dendl;
 
     ret = be->push(index, now, change.key, std::move(bl));
 
