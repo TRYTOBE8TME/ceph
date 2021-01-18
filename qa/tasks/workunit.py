@@ -429,9 +429,9 @@ def _run_tests(ctx, refspec, role, tests, env, basedir,
                     remote.run(logger=log.getChild(role), args=args, timeout=(60*60))
     finally:
         log.info('Stopping %s on %s...', tests, role)
-        args=['sudo', 'rm', '-rf', '--', workunits_file, clonedir]
+        #args=['sudo', 'rm', '-rf', '--', workunits_file, clonedir]
         # N.B. don't cleanup scratch_tmp! If the mount is broken then rm will hang.
-        remote.run(
-            logger=log.getChild(role),
-            args=args,
-        )
+        #remote.run(
+            #logger=log.getChild(role),
+            #args=args,
+        #)

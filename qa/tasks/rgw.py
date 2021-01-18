@@ -280,6 +280,7 @@ def configure_datacache(ctx, clients, datacache_path):
         if(datacache_path != None):
             ctx.cluster.only(client).run(args=['mkdir', '-p', datacache_path])
             ctx.cluster.only(client).run(args=['sudo', 'chmod', 'a+rwx', datacache_path])
+            ctx.cluster.only(client).run(args=['export', 'RGW_DATACACHE_PATH={path}'.format(path=datacache_path)])
         else:
             log.info('path for datacache was not provided')
     yield
