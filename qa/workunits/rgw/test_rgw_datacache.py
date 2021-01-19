@@ -108,7 +108,7 @@ def main():
     log.debug('ALI is here')
     out = exec_cmd('pwd')
     x = out.decode('utf8')
-    log.debug("ALI out is: %s", out)
+    log.debug("ALI out is: %s", x)
     cache_dir = os.environ['RGW_DATACACHE_PATH']
     log.debug("ALI cache dir is: %s", cache_dir)
 
