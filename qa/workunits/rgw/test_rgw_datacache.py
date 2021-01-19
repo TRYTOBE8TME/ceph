@@ -5,6 +5,7 @@ import time
 import subprocess
 import json
 import boto3
+import os
 
 """
 Rgw manual and dynamic resharding  testing against a running instance
@@ -105,7 +106,9 @@ def main():
     execute manual and dynamic resharding commands
     """
     log.debug('ALI is here')
-    exec_cmd('pwd')
+    out = exec_cmd('pwd')
+    x = out.decode('utf8')
+    log.debug("ALI out is: %s", out)
     cache_dir = os.environ['RGW_DATACACHE_PATH']
     log.debug("ALI cache dir is: %s", cache_dir)
 
