@@ -5,6 +5,7 @@ import logging as log
 import subprocess
 #import json
 import boto3
+import botocore.client import Config
 import os
 
 """
@@ -24,10 +25,11 @@ log.getLogger('urllib3').setLevel(log.CRITICAL)
 
 """ Constants """
 USER = 'rgw_datacache_user'
-DISPLAY_NAME = 'RGW Datacache User'
+DISPLAY_NAME = 'DatacacheUser'
 ACCESS_KEY = 'NX5QOQKC6BH2IDN8HC7A'
 SECRET_KEY = 'LnEsqNNqZIpkzauboDcLXLcYaWwLQ3Kop0zAnKIn'
-BUCKET_NAME1 = 'datacachebucket'
+BUCKET_NAME = 'datacachebucket'
+OBJECT_NAME = 'datacachebucket'
 
 
 def exec_cmd(cmd):
@@ -69,27 +71,36 @@ def main():
     exec_cmd('radosgw-admin user create --uid %s --display-name %s --access-key %s --secret %s'
                    % (USER, DISPLAY_NAME, ACCESS_KEY, SECRET_KEY))
 
-    def boto_connect(portnum, ssl, proto):
+    def get_boto3_client(portnum, ssl, proto):
         endpoint = proto + '://localhost:' + portnum
-        conn = boto3.resource('s3',
+        client = boto3.client(service_name='s3',
                               aws_access_key_id=ACCESS_KEY,
                               aws_secret_access_key=SECRET_KEY,
-                              use_ssl=ssl,
                               endpoint_url=endpoint,
-                              verify=False,
-                              config=None,
+                              use_ssl=ssl,
+                              config=Config(signature_version='s3v4'),
                               )
-        return conn
+        return client
 
     port = get_radosgw_port()
 
     if port == '80':
-        connection = boto_connect(port, ssl=False, proto='http')
+        client = get_boto3_client(port, ssl=False, proto='http')
     elif port == '443':
-        connection = boto_connect(port, ssl=True, proto='https')
+        client = get_boto3_client(port, ssl=True, proto='https')
 
     # create a bucket
-    bucket1 = connection.create_bucket(Bucket=BUCKET_NAME1)
+    client.create_bucket(Bucket=BUCKET_NAME)
+    client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body='bar')
+
+    # create user -- done
+    # create bucket -- done
+    # put 7 mb object
+    # get 7 mb object
+    # run object stat
+    # get name of cached object and check if it exists in the cache
+    # check to see if cached object is in ceph
+    # log TEST DONE!
 
     #log.debug('bucket name %s', json_op[0]['bucket_name'])
     #assert json_op[0]['bucket_name'] == BUCKET_NAME1
@@ -106,7 +117,7 @@ def main():
         #log.error("Resharding failed on bucket %s. Expected number of shards are not created" % BUCKET_NAME1)
 
     # Clean up
-    log.debug("Deleting bucket %s", BUCKET_NAME1)
+    log.debug("Deleting bucket %s", BUCKET_NAME)
     bucket1.objects.all().delete()
     bucket1.delete()
 
