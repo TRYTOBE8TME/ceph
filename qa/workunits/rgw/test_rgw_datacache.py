@@ -96,7 +96,7 @@ def main():
     # create a bucket
     client.create_bucket(Bucket=BUCKET_NAME)
     file_name = '7M.dat'
-    f = generate_randon_file(file_name, 1024*1024*7)
+    f = generate_random_file(file_name, 1024*1024*7)
     client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body=f)
     client.get_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME)
 
