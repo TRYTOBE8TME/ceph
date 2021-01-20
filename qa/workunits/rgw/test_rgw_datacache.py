@@ -3,7 +3,7 @@
 import logging as log
 #import time
 import subprocess
-#import json
+import json
 import boto3
 import botocore.client import Config
 import os
@@ -47,7 +47,6 @@ def exec_cmd(cmd):
         log.error(e)
         return False
 
-
 def get_radosgw_port():
     out = exec_cmd('sudo netstat -nltp | grep radosgw')
     log.debug('output: %s' % out)
@@ -55,6 +54,12 @@ def get_radosgw_port():
     port = [i for i in x if ':' in i][0].split(':')[1]
     log.info('radosgw port: %s' % port)
     return port
+
+def generate_random_file(filename,size):
+    with open('%s'%filename, 'wb') as fout:
+        fout.write(os.urandom(size))
+    log.debug('file %s size %s written', filename, size)
+    return fout
 
 def main():
     """
@@ -68,8 +73,8 @@ def main():
     log.debug("ALI cache dir is: %s", cache_dir)
 
     # create user
-    exec_cmd('radosgw-admin user create --uid %s --display-name %s --access-key %s --secret %s'
-                   % (USER, DISPLAY_NAME, ACCESS_KEY, SECRET_KEY))
+    exec_cmd('radosgw-admin user create --uid %s --display-name %s --access-key %s 
+                --secret %s' % (USER, DISPLAY_NAME, ACCESS_KEY, SECRET_KEY))
 
     def get_boto3_client(portnum, ssl, proto):
         endpoint = proto + '://localhost:' + portnum
@@ -91,7 +96,17 @@ def main():
 
     # create a bucket
     client.create_bucket(Bucket=BUCKET_NAME)
-    client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body='bar')
+    file_name = '7M.dat'
+    f = generate_randon_file(file_name, 1024*1024*7)
+    client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body=f)
+    client.get_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME)
+
+    cmd = exec_cmd('radosgw-admin object stat --bucket=%s --object=%s'
+                   % (BUCKET_NAME, OBJECT_NAME))
+
+    json_op = json.loads(cmd)
+    cached_object_name = json_op['manifest']['prefix']
+    log.debug("Cached object name %s", cached_object_name)
 
     # create user -- done
     # create bucket -- done
@@ -118,8 +133,9 @@ def main():
 
     # Clean up
     log.debug("Deleting bucket %s", BUCKET_NAME)
-    bucket1.objects.all().delete()
-    bucket1.delete()
+    client.delete_bucket(Bucket=BUCKET_NAME)
+    client.delete_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME)
+    log.debug("Bucket %s deleted", BUCKET_NAME)
 
 
 main()
