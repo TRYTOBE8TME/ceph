@@ -56,10 +56,9 @@ def get_radosgw_port():
     return port
 
 def generate_random_file(filename,size):
-    with open('%s'%filename, 'wb') as fout:
+    with open('%s' % filename, 'wb') as fout:
         fout.write(os.urandom(size))
     log.debug('file %s size %s written', filename, size)
-    return fout
 
 def main():
     """
@@ -95,9 +94,14 @@ def main():
 
     # create a bucket
     client.create_bucket(Bucket=BUCKET_NAME)
+
     file_name = '7M.dat'
-    f = generate_random_file(file_name, 1024*1024*7)
-    client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body=f)
+    size = 1024*1024*7
+    #generate_random_file(file_name, 1024*1024*7)
+    with open('%s' % filename, 'wb') as fout:
+        fout.write(os.urandom(size))
+        client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body=fout)
+
     client.get_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME)
 
     cmd = exec_cmd('radosgw-admin object stat --bucket=%s --object=%s'
