@@ -95,7 +95,7 @@ def main():
     # create a bucket
     client.create_bucket(Bucket=BUCKET_NAME)
 
-    file_name = '7M.dat'
+    filename = '7M.dat'
     size = 1024*1024*7
     #generate_random_file(file_name, 1024*1024*7)
     with open('%s' % filename, 'wb') as fout:
