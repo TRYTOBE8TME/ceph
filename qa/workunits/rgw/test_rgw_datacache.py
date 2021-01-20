@@ -73,8 +73,7 @@ def main():
     log.debug("ALI cache dir is: %s", cache_dir)
 
     # create user
-    exec_cmd('radosgw-admin user create --uid %s --display-name %s --access-key %s 
-                --secret %s' % (USER, DISPLAY_NAME, ACCESS_KEY, SECRET_KEY))
+    exec_cmd('radosgw-admin user create --uid %s --display-name %s --access-key %s --secret %s' % (USER, DISPLAY_NAME, ACCESS_KEY, SECRET_KEY))
 
     def get_boto3_client(portnum, ssl, proto):
         endpoint = proto + '://localhost:' + portnum
