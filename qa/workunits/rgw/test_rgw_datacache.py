@@ -5,7 +5,7 @@ import logging as log
 import subprocess
 import json
 import boto3
-import botocore.client import Config
+from botocore.client import Config
 import os
 
 """
