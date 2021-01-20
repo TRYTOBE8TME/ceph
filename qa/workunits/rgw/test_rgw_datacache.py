@@ -7,6 +7,8 @@ import json
 import boto3
 from botocore.client import Config
 import os
+import random
+import string
 
 """
 Rgw manual and dynamic resharding  testing against a running instance
@@ -95,14 +97,19 @@ def main():
     # create a bucket
     client.create_bucket(Bucket=BUCKET_NAME)
 
-    filename = '7M.dat'
     size = 1024*1024*7
+    random_bytes = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(size))
+    client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body=random_bytes)
+
+    #filename = '7M.dat'
     #generate_random_file(file_name, 1024*1024*7)
-    with open('%s' % filename, 'wb') as fout:
-        fout.write(os.urandom(size))
-        client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body=fout)
+    #with open('%s' % filename, 'wb') as fout:
+    #    fout.write(os.urandom(size))
+    #    client.put_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME, Body=fout)
 
     client.get_object(Bucket=BUCKET_NAME, Key=OBJECT_NAME)
+
+    cmd = exec_cmd('ls %s' % (cache_dir))
 
     cmd = exec_cmd('radosgw-admin object stat --bucket=%s --object=%s'
                    % (BUCKET_NAME, OBJECT_NAME))
