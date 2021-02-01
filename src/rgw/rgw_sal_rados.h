@@ -17,6 +17,7 @@
 
 #include "rgw_sal.h"
 #include "rgw_rados.h"
+#include "rgw_cache.h"
 #include "cls/lock/cls_lock_client.h"
 
 namespace rgw { namespace sal {

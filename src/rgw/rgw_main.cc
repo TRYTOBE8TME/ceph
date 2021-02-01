@@ -328,6 +328,7 @@ int radosgw_Main(int argc, const char **argv)
 #endif
 
   const DoutPrefix dp(cct.get(), dout_subsys, "rgw main: ");
+  bool rgw_d3n_datacache_enabled = g_conf()->rgw_d3n_l1_local_datacache_enabled || g_conf()->rgw_d3n_l2_distributed_datacache_enabled;
   rgw::sal::RGWRadosStore *store =
     RGWStoreManager::get_storage(&dp, g_ceph_context,
 				 g_conf()->rgw_enable_gc_threads,
@@ -335,7 +336,8 @@ int radosgw_Main(int argc, const char **argv)
 				 g_conf()->rgw_enable_quota_threads,
 				 g_conf()->rgw_run_sync_thread,
 				 g_conf().get_val<bool>("rgw_dynamic_resharding"),
-				 g_conf()->rgw_cache_enabled);
+				 g_conf()->rgw_cache_enabled,
+				 rgw_d3n_datacache_enabled);
   if (!store) {
     mutex.lock();
     init_timer.cancel_all_events();
