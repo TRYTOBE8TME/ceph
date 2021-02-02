@@ -35,6 +35,7 @@ struct rgw_sync_bucket_entity;
 
 class RGWSI_Bucket_Sync_SObj : public RGWSI_Bucket_Sync
 {
+  const DoutPrefixProvider *dpp;
   struct bucket_sync_policy_cache_entry {
     std::shared_ptr<RGWBucketSyncPolicyHandler> handler;
   };
@@ -114,7 +115,7 @@ public:
                         const RGWBucketInfo& bucket_info,
                         optional_yield y) override;
 
-  int get_bucket_sync_hints(const DoutPrefixProvider *dpp, 
+  int get_bucket_sync_hints(const DoutPrefixProvider *dpp,
                             const rgw_bucket& bucket,
                             std::set<rgw_bucket> *sources,
                             std::set<rgw_bucket> *dests,

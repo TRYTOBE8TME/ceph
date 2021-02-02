@@ -21,6 +21,7 @@ class RGWSI_SysObj_Cache : public RGWSI_SysObj_Core
 
   RGWSI_Notify *notify_svc{nullptr};
   ObjectCache cache;
+  const DoutPrefixProvider *dpp;
 
   std::shared_ptr<RGWSI_SysObj_Cache_CB> cb;
 
@@ -41,7 +42,7 @@ protected:
                RGWObjVersionTracker *objv_tracker,
                optional_yield y) override;
 
-  int read(const DoutPrefixProvider *dpp, 
+  int read(const DoutPrefixProvider *dpp,
            RGWSysObjectCtxBase& obj_ctx,
            RGWSI_SysObj_Obj_GetObjState& read_state,
            RGWObjVersionTracker *objv_tracker,
@@ -108,6 +109,7 @@ public:
   void unregister_chained_cache(RGWChainedCache *cc);
 
   class ASocketHandler {
+    const DoutPrefixProvider *dpp;
     RGWSI_SysObj_Cache *svc;
 
     std::unique_ptr<RGWSI_SysObj_Cache_ASocketHook> hook;

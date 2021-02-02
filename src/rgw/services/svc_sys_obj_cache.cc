@@ -104,7 +104,7 @@ int RGWSI_SysObj_Cache::remove(const DoutPrefixProvider *dpp,
   return RGWSI_SysObj_Core::remove(dpp, obj_ctx, objv_tracker, obj, y);
 }
 
-int RGWSI_SysObj_Cache::read(const DoutPrefixProvider *dpp, 
+int RGWSI_SysObj_Cache::read(const DoutPrefixProvider *dpp,
                              RGWSysObjectCtxBase& obj_ctx,
                              RGWSI_SysObj_Obj_GetObjState& read_state,
                              RGWObjVersionTracker *objv_tracker,
@@ -135,7 +135,7 @@ int RGWSI_SysObj_Cache::read(const DoutPrefixProvider *dpp,
   if (attrs)
     flags |= CACHE_FLAG_XATTRS;
   
-  int r = cache.get(name, info, flags, cache_info);
+  int r = cache.get(dpp, name, info, flags, cache_info);
   if (r == 0 &&
       (!refresh_version || !info.version.compare(&(*refresh_version)))) {
     if (info.status < 0)
@@ -205,7 +205,7 @@ int RGWSI_SysObj_Cache::read(const DoutPrefixProvider *dpp,
   return r;
 }
 
-int RGWSI_SysObj_Cache::get_attr(const DoutPrefixProvider *dpp, 
+int RGWSI_SysObj_Cache::get_attr(const DoutPrefixProvider *dpp,
                                  const rgw_raw_obj& obj,
                                  const char *attr_name,
                                  bufferlist *dest,
@@ -221,7 +221,7 @@ int RGWSI_SysObj_Cache::get_attr(const DoutPrefixProvider *dpp,
 
   uint32_t flags = CACHE_FLAG_XATTRS;
 
-  int r = cache.get(name, info, flags, nullptr);
+  int r = cache.get(dpp, name, info, flags, nullptr);
   if (r == 0) {
     if (info.status < 0)
       return info.status;
@@ -373,7 +373,7 @@ int RGWSI_SysObj_Cache::raw_stat(const DoutPrefixProvider *dpp, const rgw_raw_ob
   uint32_t flags = CACHE_FLAG_META | CACHE_FLAG_XATTRS;
   if (objv_tracker)
     flags |= CACHE_FLAG_OBJV;
-  int r = cache.get(name, info, flags, NULL);
+  int r = cache.get(dpp, name, info, flags, NULL);
   if (r == 0) {
     if (info.status < 0)
       return info.status;
@@ -619,7 +619,7 @@ void RGWSI_SysObj_Cache::ASocketHandler::call_list(const std::optional<std::stri
 
 int RGWSI_SysObj_Cache::ASocketHandler::call_inspect(const std::string& target, Formatter* f)
 {
-  if (const auto entry = svc->cache.get(target)) {
+  if (const auto entry = svc->cache.get(dpp, target)) {
     f->open_object_section("cache_entry");
     f->dump_string("name", target.c_str());
     entry->dump(f);

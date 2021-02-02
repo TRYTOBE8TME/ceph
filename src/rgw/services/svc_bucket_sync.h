@@ -45,7 +45,7 @@ public:
                                 const RGWBucketInfo& bucket_info,
                                 optional_yield y) = 0;
 
-  virtual int get_bucket_sync_hints(const DoutPrefixProvider *dpp, 
+  virtual int get_bucket_sync_hints(const DoutPrefixProvider *dpp,
                                     const rgw_bucket& bucket,
                                     std::set<rgw_bucket> *sources,
                                     std::set<rgw_bucket> *dests,

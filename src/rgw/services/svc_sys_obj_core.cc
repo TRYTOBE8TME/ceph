@@ -195,7 +195,7 @@ int RGWSI_SysObj_Core::stat(RGWSysObjectCtxBase& obj_ctx,
   return 0;
 }
 
-int RGWSI_SysObj_Core::read(const DoutPrefixProvider *dpp, 
+int RGWSI_SysObj_Core::read(const DoutPrefixProvider *dpp,
                             RGWSysObjectCtxBase& obj_ctx,
                             RGWSI_SysObj_Obj_GetObjState& _read_state,
                             RGWObjVersionTracker *objv_tracker,
@@ -271,7 +271,7 @@ int RGWSI_SysObj_Core::read(const DoutPrefixProvider *dpp,
  * dest: bufferlist to store the result in
  * Returns: 0 on success, -ERR# otherwise.
  */
-int RGWSI_SysObj_Core::get_attr(const DoutPrefixProvider *dpp, 
+int RGWSI_SysObj_Core::get_attr(const DoutPrefixProvider *dpp,
                                 const rgw_raw_obj& obj,
                                 const char *name,
                                 bufferlist *dest,

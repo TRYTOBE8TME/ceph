@@ -279,6 +279,7 @@ static inline ostream& operator<<(ostream& os, const RGWBucketSyncFlowManager::e
 }
 
 class RGWBucketSyncPolicyHandler {
+  const DoutPrefixProvider *dpp;
   bool legacy_config{false};
   const RGWBucketSyncPolicyHandler *parent{nullptr};
   RGWSI_Zone *zone_svc;

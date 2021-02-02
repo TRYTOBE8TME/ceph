@@ -9,7 +9,7 @@
 #define dout_subsys ceph_subsys_rgw
 
 
-int ObjectCache::get(const string& name, ObjectCacheInfo& info, uint32_t mask, rgw_cache_entry_info *cache_info)
+int ObjectCache::get(const DoutPrefixProvider *dpp, const string& name, ObjectCacheInfo& info, uint32_t mask, rgw_cache_entry_info *cache_info)
 {
 
   std::shared_lock rl{lock};
@@ -18,7 +18,7 @@ int ObjectCache::get(const string& name, ObjectCacheInfo& info, uint32_t mask, r
   }
   auto iter = cache_map.find(name);
   if (iter == cache_map.end()) {
-    ldout(cct, 10) << "cache get: name=" << name << " : miss" << dendl;
+    ldpp_dout(dpp, 10) << "cache get: name=" << name << " : miss" << dendl;
     if (perfcounter) {
       perfcounter->inc(l_rgw_cache_miss);
     }
@@ -27,7 +27,7 @@ int ObjectCache::get(const string& name, ObjectCacheInfo& info, uint32_t mask, r
 
   if (expiry.count() &&
        (ceph::coarse_mono_clock::now() - iter->second.info.time_added) > expiry) {
-    ldout(cct, 10) << "cache get: name=" << name << " : expiry miss" << dendl;
+    ldpp_dout(dpp, 10) << "cache get: name=" << name << " : expiry miss" << dendl;
     rl.unlock();
     std::unique_lock wl{lock};  // write lock for insertion
     // check that wasn't already removed by other thread
@@ -47,14 +47,14 @@ int ObjectCache::get(const string& name, ObjectCacheInfo& info, uint32_t mask, r
   ObjectCacheEntry *entry = &iter->second;
 
   if (lru_counter - entry->lru_promotion_ts > lru_window) {
-    ldout(cct, 20) << "cache get: touching lru, lru_counter=" << lru_counter
+    ldpp_dout(dpp, 20) << "cache get: touching lru, lru_counter=" << lru_counter
                    << " promotion_ts=" << entry->lru_promotion_ts << dendl;
     rl.unlock();
     std::unique_lock wl{lock};  // write lock for insertion
     /* need to redo this because entry might have dropped off the cache */
     iter = cache_map.find(name);
     if (iter == cache_map.end()) {
-      ldout(cct, 10) << "lost race! cache get: name=" << name << " : miss" << dendl;
+      ldpp_dout(dpp, 10) << "lost race! cache get: name=" << name << " : miss" << dendl;
       if(perfcounter) perfcounter->inc(l_rgw_cache_miss);
       return -ENOENT;
     }
@@ -68,18 +68,18 @@ int ObjectCache::get(const string& name, ObjectCacheInfo& info, uint32_t mask, r
 
   ObjectCacheInfo& src = iter->second.info;
   if(src.status == -ENOENT) {
-    ldout(cct, 10) << "cache get: name=" << name << " : hit (negative entry)" << dendl;
+    ldpp_dout(dpp, 10) << "cache get: name=" << name << " : hit (negative entry)" << dendl;
     if (perfcounter) perfcounter->inc(l_rgw_cache_hit);
     return -ENODATA;
   }
   if ((src.flags & mask) != mask) {
-    ldout(cct, 10) << "cache get: name=" << name << " : type miss (requested=0x"
+    ldpp_dout(dpp, 10) << "cache get: name=" << name << " : type miss (requested=0x"
                    << std::hex << mask << ", cached=0x" << src.flags
                    << std::dec << ")" << dendl;
     if(perfcounter) perfcounter->inc(l_rgw_cache_miss);
     return -ENOENT;
   }
-  ldout(cct, 10) << "cache get: name=" << name << " : hit (requested=0x"
+  ldpp_dout(dpp, 10) << "cache get: name=" << name << " : hit (requested=0x"
                  << std::hex << mask << ", cached=0x" << src.flags
                  << std::dec << ")" << dendl;
 

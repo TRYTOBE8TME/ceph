@@ -40,7 +40,7 @@ int RGWSI_SysObj::Obj::ROp::stat(optional_yield y, const DoutPrefixProvider *dpp
                    objv_tracker, y, dpp);
 }
 
-int RGWSI_SysObj::Obj::ROp::read(const DoutPrefixProvider *dpp, 
+int RGWSI_SysObj::Obj::ROp::read(const DoutPrefixProvider *dpp,
                                  int64_t ofs, int64_t end, bufferlist *bl,
                                  optional_yield y)
 {
@@ -56,7 +56,7 @@ int RGWSI_SysObj::Obj::ROp::read(const DoutPrefixProvider *dpp,
                    refresh_version, y);
 }
 
-int RGWSI_SysObj::Obj::ROp::get_attr(const DoutPrefixProvider *dpp, 
+int RGWSI_SysObj::Obj::ROp::get_attr(const DoutPrefixProvider *dpp,
                                      const char *name, bufferlist *dest,
                                      optional_yield y)
 {
