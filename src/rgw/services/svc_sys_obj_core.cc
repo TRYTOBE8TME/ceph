@@ -69,7 +69,7 @@ int RGWSI_SysObj_Core::get_system_obj_state_impl(RGWSysObjectCtxBase *rctx,
 
   s->obj = obj;
 
-  int r = raw_stat(obj, &s->size, &s->mtime, &s->epoch, &s->attrset,
+  int r = raw_stat(dpp, obj, &s->size, &s->mtime, &s->epoch, &s->attrset,
                    (s->prefetch_data ? &s->data : nullptr), objv_tracker, y);
   if (r == -ENOENT) {
     s->exists = false;
@@ -109,7 +109,7 @@ int RGWSI_SysObj_Core::get_system_obj_state(RGWSysObjectCtxBase *rctx,
   return ret;
 }
 
-int RGWSI_SysObj_Core::raw_stat(const rgw_raw_obj& obj, uint64_t *psize, real_time *pmtime, uint64_t *epoch,
+int RGWSI_SysObj_Core::raw_stat(const DoutPrefixProvider *dpp, const rgw_raw_obj& obj, uint64_t *psize, real_time *pmtime, uint64_t *epoch,
                                 map<string, bufferlist> *attrs, bufferlist *first_chunk,
                                 RGWObjVersionTracker *objv_tracker,
                                 optional_yield y)
@@ -195,7 +195,8 @@ int RGWSI_SysObj_Core::stat(RGWSysObjectCtxBase& obj_ctx,
   return 0;
 }
 
-int RGWSI_SysObj_Core::read(RGWSysObjectCtxBase& obj_ctx,
+int RGWSI_SysObj_Core::read(const DoutPrefixProvider *dpp,
+                            RGWSysObjectCtxBase& obj_ctx,
                             RGWSI_SysObj_Obj_GetObjState& _read_state,
                             RGWObjVersionTracker *objv_tracker,
                             const rgw_raw_obj& obj,
@@ -270,7 +271,8 @@ int RGWSI_SysObj_Core::read(RGWSysObjectCtxBase& obj_ctx,
  * dest: bufferlist to store the result in
  * Returns: 0 on success, -ERR# otherwise.
  */
-int RGWSI_SysObj_Core::get_attr(const rgw_raw_obj& obj,
+int RGWSI_SysObj_Core::get_attr(const DoutPrefixProvider *dpp,
+                                const rgw_raw_obj& obj,
                                 const char *name,
                                 bufferlist *dest,
                                 optional_yield y)

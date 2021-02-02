@@ -21,6 +21,7 @@ class RGWSI_SysObj_Cache : public RGWSI_SysObj_Core
 
   RGWSI_Notify *notify_svc{nullptr};
   ObjectCache cache;
+  const DoutPrefixProvider *dpp;
 
   std::shared_ptr<RGWSI_SysObj_Cache_CB> cb;
 
@@ -36,12 +37,13 @@ protected:
   int do_start(optional_yield, const DoutPrefixProvider *dpp) override;
   void shutdown() override;
 
-  int raw_stat(const rgw_raw_obj& obj, uint64_t *psize, real_time *pmtime, uint64_t *epoch,
+  int raw_stat(const DoutPrefixProvider *dpp, const rgw_raw_obj& obj, uint64_t *psize, real_time *pmtime, uint64_t *epoch,
                map<string, bufferlist> *attrs, bufferlist *first_chunk,
                RGWObjVersionTracker *objv_tracker,
                optional_yield y) override;
 
-  int read(RGWSysObjectCtxBase& obj_ctx,
+  int read(const DoutPrefixProvider *dpp,
+           RGWSysObjectCtxBase& obj_ctx,
            RGWSI_SysObj_Obj_GetObjState& read_state,
            RGWObjVersionTracker *objv_tracker,
            const rgw_raw_obj& obj,
@@ -52,7 +54,7 @@ protected:
            boost::optional<obj_version>,
            optional_yield y) override;
 
-  int get_attr(const rgw_raw_obj& obj, const char *name, bufferlist *dest,
+  int get_attr(const DoutPrefixProvider *dpp, const rgw_raw_obj& obj, const char *name, bufferlist *dest,
                optional_yield y) override;
 
   int set_attrs(const rgw_raw_obj& obj, 
@@ -103,6 +105,7 @@ public:
   void unregister_chained_cache(RGWChainedCache *cc);
 
   class ASocketHandler {
+    const DoutPrefixProvider *dpp;
     RGWSI_SysObj_Cache *svc;
 
     std::unique_ptr<RGWSI_SysObj_Cache_ASocketHook> hook;
@@ -124,7 +127,7 @@ public:
     // dump it to the supplied Formatter and return true. If not found,
     // it must return false.
     //
-    int call_inspect(const std::string& target, Formatter* f);
+    int call_inspect(const DoutPrefixProvider *dpp, const std::string& target, Formatter* f);
 
     // `call_erase` must erase the requested target and return true. If
     // the requested target does not exist, it should return false.

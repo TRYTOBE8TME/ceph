@@ -48,6 +48,7 @@ public:
     }
 
     struct ROp {
+      const DoutPrefixProvider *dpp;
       Obj& source;
 
       ceph::static_ptr<RGWSI_SysObj_Obj_GetObjState, sizeof(RGWSI_SysObj_Core_GetObjState)> state;
@@ -98,11 +99,11 @@ public:
       ROp(Obj& _source);
 
       int stat(optional_yield y, const DoutPrefixProvider *dpp);
-      int read(int64_t ofs, int64_t end, bufferlist *pbl, optional_yield y);
-      int read(bufferlist *pbl, optional_yield y) {
-        return read(0, -1, pbl, y);
+      int read(const DoutPrefixProvider *dpp, int64_t ofs, int64_t end, bufferlist *pbl, optional_yield y);
+      int read(const DoutPrefixProvider *dpp, bufferlist *pbl, optional_yield y) {
+        return read(dpp, 0, -1, pbl, y);
       }
-      int get_attr(const char *name, bufferlist *dest, optional_yield y);
+      int get_attr(const DoutPrefixProvider *dpp, const char *name, bufferlist *dest, optional_yield y);
     };
 
     struct WOp {

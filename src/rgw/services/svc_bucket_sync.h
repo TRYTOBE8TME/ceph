@@ -43,7 +43,8 @@ public:
   virtual int handle_bi_removal(const RGWBucketInfo& bucket_info,
                                 optional_yield y) = 0;
 
-  virtual int get_bucket_sync_hints(const rgw_bucket& bucket,
+  virtual int get_bucket_sync_hints(const DoutPrefixProvider *dpp,
+                                    const rgw_bucket& bucket,
                                     std::set<rgw_bucket> *sources,
                                     std::set<rgw_bucket> *dests,
                                     optional_yield y) = 0;

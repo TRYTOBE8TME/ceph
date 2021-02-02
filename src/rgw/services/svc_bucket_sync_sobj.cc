@@ -293,6 +293,7 @@ static bool diff_sets(std::set<rgw_bucket>& orig_set,
 
 class RGWSI_BS_SObj_HintIndexObj
 {
+  const DoutPrefixProvider *dpp;
   friend class RGWSI_Bucket_Sync_SObj;
 
   CephContext *cct;
@@ -488,7 +489,7 @@ private:
                       C2 *remove,
                       single_instance_info *instance);
 
-  int read(optional_yield y);
+  int read(const DoutPrefixProvider *dpp, optional_yield y);
   int flush(optional_yield y);
 
   void invalidate() {
@@ -520,7 +521,7 @@ int RGWSI_BS_SObj_HintIndexObj::update(const rgw_bucket& entity,
 
   for (int i = 0; i < MAX_RETRIES; ++i) {
     if (!has_data) {
-      r = read(y);
+      r = read(dpp, y);
       if (r < 0) {
         ldout(cct, 0) << "ERROR: cannot update hint index: failed to read: r=" << r << dendl;
         return r;
@@ -575,12 +576,12 @@ void RGWSI_BS_SObj_HintIndexObj::update_entries(const rgw_bucket& info_source,
   }
 }
 
-int RGWSI_BS_SObj_HintIndexObj::read(optional_yield y) {
+int RGWSI_BS_SObj_HintIndexObj::read(const DoutPrefixProvider *dpp, optional_yield y) {
   RGWObjVersionTracker _ot;
   bufferlist bl;
   int r = sysobj.rop()
     .set_objv_tracker(&_ot) /* forcing read of current version */
-    .read(&bl, y);
+    .read(dpp, &bl, y);
   if (r < 0 && r != -ENOENT) {
     ldout(cct, 0) << "ERROR: failed reading data (obj=" << obj << "), r=" << r << dendl;
     return r;
@@ -829,7 +830,8 @@ int RGWSI_Bucket_Sync_SObj::handle_bi_update(RGWBucketInfo& bucket_info,
                                       y);
 }
 
-int RGWSI_Bucket_Sync_SObj::get_bucket_sync_hints(const rgw_bucket& bucket,
+int RGWSI_Bucket_Sync_SObj::get_bucket_sync_hints(const DoutPrefixProvider *dpp,
+                                                  const rgw_bucket& bucket,
                                                   std::set<rgw_bucket> *sources,
                                                   std::set<rgw_bucket> *dests,
                                                   optional_yield y)
@@ -841,7 +843,7 @@ int RGWSI_Bucket_Sync_SObj::get_bucket_sync_hints(const rgw_bucket& bucket,
   if (sources) {
     RGWSI_BS_SObj_HintIndexObj index(svc.sysobj,
                                      hint_index_mgr->get_sources_obj(bucket));
-    int r = index.read(y);
+    int r = index.read(dpp, y);
     if (r < 0) {
       ldout(cct, 0) << "ERROR: failed to update sources index for bucket=" << bucket << " r=" << r << dendl;
       return r;
@@ -859,7 +861,7 @@ int RGWSI_Bucket_Sync_SObj::get_bucket_sync_hints(const rgw_bucket& bucket,
   if (dests) {
     RGWSI_BS_SObj_HintIndexObj index(svc.sysobj,
                                      hint_index_mgr->get_dests_obj(bucket));
-    int r = index.read(y);
+    int r = index.read(dpp, y);
     if (r < 0) {
       ldout(cct, 0) << "ERROR: failed to read targets index for bucket=" << bucket << " r=" << r << dendl;
       return r;

@@ -736,7 +736,7 @@ RGWBucketSyncPolicyHandler *RGWBucketSyncPolicyHandler::alloc_child(const rgw_bu
 
 int RGWBucketSyncPolicyHandler::init(optional_yield y)
 {
-  int r = bucket_sync_svc->get_bucket_sync_hints(bucket.value_or(rgw_bucket()),
+  int r = bucket_sync_svc->get_bucket_sync_hints(dpp, bucket.value_or(rgw_bucket()),
 						 &source_hints,
 						 &target_hints,
 						 y);

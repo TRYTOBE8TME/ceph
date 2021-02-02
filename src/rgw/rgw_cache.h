@@ -155,6 +155,7 @@ struct ObjectCacheEntry {
 };
 
 class ObjectCache {
+  const DoutPrefixProvider *dpp;
   std::unordered_map<string, ObjectCacheEntry> cache_map;
   std::list<string> lru;
   unsigned long lru_size;
@@ -178,10 +179,10 @@ class ObjectCache {
 public:
   ObjectCache() : lru_size(0), lru_counter(0), lru_window(0), cct(NULL), enabled(false) { }
   ~ObjectCache();
-  int get(const std::string& name, ObjectCacheInfo& bl, uint32_t mask, rgw_cache_entry_info *cache_info);
-  std::optional<ObjectCacheInfo> get(const std::string& name) {
+  int get(const DoutPrefixProvider *dpp, const std::string& name, ObjectCacheInfo& bl, uint32_t mask, rgw_cache_entry_info *cache_info);
+  std::optional<ObjectCacheInfo> get(const DoutPrefixProvider *dpp, const std::string& name) {
     std::optional<ObjectCacheInfo> info{std::in_place};
-    auto r = get(name, *info, 0, nullptr);
+    auto r = get(dpp, name, *info, 0, nullptr);
     return r < 0 ? std::nullopt : info;
   }
 

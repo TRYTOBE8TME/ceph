@@ -4246,7 +4246,7 @@ class RGWGetBucketPeersCR : public RGWCoroutine {
                    const rgw_bucket& _source_bucket) : sync_env(_sync_env),
                                                        source_bucket(_source_bucket) {}
     int operate() override {
-      int r = sync_env->svc->bucket_sync->get_bucket_sync_hints(source_bucket,
+      int r = sync_env->svc->bucket_sync->get_bucket_sync_hints(dpp, source_bucket,
                                                                 nullptr,
                                                                 &targets,
                                                                 null_yield);

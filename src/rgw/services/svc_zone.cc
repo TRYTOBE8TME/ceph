@@ -361,7 +361,7 @@ int RGWSI_Zone::replace_region_with_zonegroup(const DoutPrefixProvider *dpp, opt
   RGWSysObjectCtx obj_ctx = sysobj_svc->init_obj_ctx();
   RGWSysObj sysobj = sysobj_svc->get_obj(obj_ctx, rgw_raw_obj(pool, oid));
 
-  int ret = sysobj.rop().read(&bl, y);
+  int ret = sysobj.rop().read(dpp, &bl, y);
   if (ret < 0 && ret !=  -ENOENT) {
     ldout(cct, 0) << __func__ << " failed to read converted: ret "<< ret << " " << cpp_strerror(-ret)
 		  << dendl;
@@ -780,7 +780,7 @@ int RGWSI_Zone::convert_regionmap(const DoutPrefixProvider *dpp, optional_yield 
   RGWSysObjectCtx obj_ctx = sysobj_svc->init_obj_ctx();
   RGWSysObj sysobj = sysobj_svc->get_obj(obj_ctx, rgw_raw_obj(pool, oid));
 
-  int ret = sysobj.rop().read(&bl, y);
+  int ret = sysobj.rop().read(dpp, &bl, y);
   if (ret < 0 && ret != -ENOENT) {
     return ret;
   } else if (ret == -ENOENT) {
@@ -1076,7 +1076,7 @@ int RGWSI_Zone::select_bucket_location_by_rule(const rgw_placement_rule& locatio
      * created on a different zone, using a legacy / default pool configuration
      */
     if (rule_info) {
-      return select_legacy_bucket_placement(rule_info, y);
+      return select_legacy_bucket_placement(dpp, rule_info, y);
     }
 
     return 0;
@@ -1126,13 +1126,13 @@ int RGWSI_Zone::select_bucket_placement(const RGWUserInfo& user_info, const stri
   }
 
   if (rule_info) {
-    return select_legacy_bucket_placement(rule_info, y);
+    return select_legacy_bucket_placement(dpp, rule_info, y);
   }
 
   return 0;
 }
 
-int RGWSI_Zone::select_legacy_bucket_placement(RGWZonePlacementInfo *rule_info,
+int RGWSI_Zone::select_legacy_bucket_placement(const DoutPrefixProvider *dpp, RGWZonePlacementInfo *rule_info,
 					       optional_yield y)
 {
   bufferlist map_bl;
@@ -1145,7 +1145,7 @@ int RGWSI_Zone::select_legacy_bucket_placement(RGWZonePlacementInfo *rule_info,
   auto obj_ctx = sysobj_svc->init_obj_ctx();
   auto sysobj = obj_ctx.get_obj(obj);
 
-  int ret = sysobj.rop().read(&map_bl, y);
+  int ret = sysobj.rop().read(dpp, &map_bl, y);
   if (ret < 0) {
     goto read_omap;
   }

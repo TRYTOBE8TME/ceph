@@ -103,7 +103,8 @@ int RGWSI_SysObj_Cache::remove(RGWSysObjectCtxBase& obj_ctx,
   return RGWSI_SysObj_Core::remove(obj_ctx, objv_tracker, obj, y);
 }
 
-int RGWSI_SysObj_Cache::read(RGWSysObjectCtxBase& obj_ctx,
+int RGWSI_SysObj_Cache::read(const DoutPrefixProvider *dpp,
+                             RGWSysObjectCtxBase& obj_ctx,
                              RGWSI_SysObj_Obj_GetObjState& read_state,
                              RGWObjVersionTracker *objv_tracker,
                              const rgw_raw_obj& obj,
@@ -117,7 +118,7 @@ int RGWSI_SysObj_Cache::read(RGWSysObjectCtxBase& obj_ctx,
   rgw_pool pool;
   string oid;
   if (ofs != 0) {
-    return RGWSI_SysObj_Core::read(obj_ctx, read_state, objv_tracker,
+    return RGWSI_SysObj_Core::read(dpp, obj_ctx, read_state, objv_tracker,
                                    obj, obl, ofs, end, attrs, raw_attrs,
                                    cache_info, refresh_version, y);
   }
@@ -133,7 +134,7 @@ int RGWSI_SysObj_Cache::read(RGWSysObjectCtxBase& obj_ctx,
   if (attrs)
     flags |= CACHE_FLAG_XATTRS;
   
-  int r = cache.get(name, info, flags, cache_info);
+  int r = cache.get(dpp, name, info, flags, cache_info);
   if (r == 0 &&
       (!refresh_version || !info.version.compare(&(*refresh_version)))) {
     if (info.status < 0)
@@ -161,7 +162,7 @@ int RGWSI_SysObj_Cache::read(RGWSysObjectCtxBase& obj_ctx,
     return -ENOENT;
 
   map<string, bufferlist> unfiltered_attrset;
-  r = RGWSI_SysObj_Core::read(obj_ctx, read_state, objv_tracker,
+  r = RGWSI_SysObj_Core::read(dpp, obj_ctx, read_state, objv_tracker,
                          obj, obl, ofs, end,
 			 (attrs ? &unfiltered_attrset : nullptr),
 			 true, /* cache unfiltered attrs */
@@ -203,7 +204,8 @@ int RGWSI_SysObj_Cache::read(RGWSysObjectCtxBase& obj_ctx,
   return r;
 }
 
-int RGWSI_SysObj_Cache::get_attr(const rgw_raw_obj& obj,
+int RGWSI_SysObj_Cache::get_attr(const DoutPrefixProvider *dpp,
+                                 const rgw_raw_obj& obj,
                                  const char *attr_name,
                                  bufferlist *dest,
                                  optional_yield y)
@@ -218,7 +220,7 @@ int RGWSI_SysObj_Cache::get_attr(const rgw_raw_obj& obj,
 
   uint32_t flags = CACHE_FLAG_XATTRS;
 
-  int r = cache.get(name, info, flags, nullptr);
+  int r = cache.get(dpp, name, info, flags, nullptr);
   if (r == 0) {
     if (info.status < 0)
       return info.status;
@@ -234,7 +236,7 @@ int RGWSI_SysObj_Cache::get_attr(const rgw_raw_obj& obj,
     return -ENOENT;
   }
   /* don't try to cache this one */
-  return RGWSI_SysObj_Core::get_attr(obj, attr_name, dest, y);
+  return RGWSI_SysObj_Core::get_attr(dpp, obj, attr_name, dest, y);
 }
 
 int RGWSI_SysObj_Cache::set_attrs(const rgw_raw_obj& obj, 
@@ -348,7 +350,7 @@ int RGWSI_SysObj_Cache::write_data(const rgw_raw_obj& obj,
   return ret;
 }
 
-int RGWSI_SysObj_Cache::raw_stat(const rgw_raw_obj& obj, uint64_t *psize, real_time *pmtime, uint64_t *pepoch,
+int RGWSI_SysObj_Cache::raw_stat(const DoutPrefixProvider *dpp, const rgw_raw_obj& obj, uint64_t *psize, real_time *pmtime, uint64_t *pepoch,
                                  map<string, bufferlist> *attrs, bufferlist *first_chunk,
                                  RGWObjVersionTracker *objv_tracker,
                                  optional_yield y)
@@ -367,7 +369,7 @@ int RGWSI_SysObj_Cache::raw_stat(const rgw_raw_obj& obj, uint64_t *psize, real_t
   uint32_t flags = CACHE_FLAG_META | CACHE_FLAG_XATTRS;
   if (objv_tracker)
     flags |= CACHE_FLAG_OBJV;
-  int r = cache.get(name, info, flags, NULL);
+  int r = cache.get(dpp, name, info, flags, NULL);
   if (r == 0) {
     if (info.status < 0)
       return info.status;
@@ -382,7 +384,7 @@ int RGWSI_SysObj_Cache::raw_stat(const rgw_raw_obj& obj, uint64_t *psize, real_t
   if (r == -ENODATA) {
     return -ENOENT;
   }
-  r = RGWSI_SysObj_Core::raw_stat(obj, &size, &mtime, &epoch, &info.xattrs,
+  r = RGWSI_SysObj_Core::raw_stat(dpp, obj, &size, &mtime, &epoch, &info.xattrs,
                                   first_chunk, objv_tracker, y);
   if (r < 0) {
     if (r == -ENOENT) {
@@ -497,6 +499,7 @@ static void cache_list_dump_helper(Formatter* f,
 }
 
 class RGWSI_SysObj_Cache_ASocketHook : public AdminSocketHook {
+  const DoutPrefixProvider *dpp;
   RGWSI_SysObj_Cache *svc;
 
   static constexpr std::string_view admin_commands[][2] = {
@@ -516,7 +519,8 @@ public:
     int start();
     void shutdown();
 
-    int call(std::string_view command, const cmdmap_t& cmdmap,
+    int call(const DoutPrefixProvider *dpp, 
+             std::string_view command, const cmdmap_t& cmdmap,
 	     Formatter *f,
 	     std::ostream& ss,
 	     bufferlist& out) override;
@@ -543,6 +547,7 @@ void RGWSI_SysObj_Cache_ASocketHook::shutdown()
 }
 
 int RGWSI_SysObj_Cache_ASocketHook::call(
+  const DoutPrefixProvider *dpp, 
   std::string_view command, const cmdmap_t& cmdmap,
   Formatter *f,
   std::ostream& ss,
@@ -559,7 +564,7 @@ int RGWSI_SysObj_Cache_ASocketHook::call(
     return 0;
   } else if (command == "cache inspect"sv) {
     const auto& target = boost::get<std::string>(cmdmap.at("target"));
-    if (svc->asocket.call_inspect(target, f)) {
+    if (svc->asocket.call_inspect(dpp, target, f)) {
       return 0;
     } else {
       ss << "Unable to find entry "s + target + ".\n";
@@ -610,9 +615,9 @@ void RGWSI_SysObj_Cache::ASocketHandler::call_list(const std::optional<std::stri
     });
 }
 
-int RGWSI_SysObj_Cache::ASocketHandler::call_inspect(const std::string& target, Formatter* f)
+int RGWSI_SysObj_Cache::ASocketHandler::call_inspect(const DoutPrefixProvider *dpp, const std::string& target, Formatter* f)
 {
-  if (const auto entry = svc->cache.get(target)) {
+  if (const auto entry = svc->cache.get(dpp, target)) {
     f->open_object_section("cache_entry");
     f->dump_string("name", target.c_str());
     entry->dump(f);

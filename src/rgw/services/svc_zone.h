@@ -26,6 +26,7 @@ struct rgw_sync_policy_info;
 
 class RGWSI_Zone : public RGWServiceInstance
 {
+  const DoutPrefixProvider *dpp;
   friend struct RGWServices_Def;
 
   RGWSI_SysObj *sysobj_svc{nullptr};
@@ -127,7 +128,7 @@ public:
   int select_bucket_placement(const RGWUserInfo& user_info, const string& zonegroup_id,
                               const rgw_placement_rule& rule,
                               rgw_placement_rule *pselected_rule, RGWZonePlacementInfo *rule_info, optional_yield y);
-  int select_legacy_bucket_placement(RGWZonePlacementInfo *rule_info, optional_yield y);
+  int select_legacy_bucket_placement(const DoutPrefixProvider *dpp, RGWZonePlacementInfo *rule_info, optional_yield y);
   int select_new_bucket_location(const RGWUserInfo& user_info, const string& zonegroup_id,
                                  const rgw_placement_rule& rule,
                                  rgw_placement_rule *pselected_rule_name, RGWZonePlacementInfo *rule_info,

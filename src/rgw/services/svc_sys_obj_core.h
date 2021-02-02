@@ -33,12 +33,13 @@ protected:
   }
   int get_rados_obj(RGWSI_Zone *zone_svc, const rgw_raw_obj& obj, RGWSI_RADOS::Obj *pobj);
 
-  virtual int raw_stat(const rgw_raw_obj& obj, uint64_t *psize, real_time *pmtime, uint64_t *epoch,
+  virtual int raw_stat(const DoutPrefixProvider *dpp, const rgw_raw_obj& obj, uint64_t *psize, real_time *pmtime, uint64_t *epoch,
                        map<string, bufferlist> *attrs, bufferlist *first_chunk,
                        RGWObjVersionTracker *objv_tracker,
                        optional_yield y);
 
-  virtual int read(RGWSysObjectCtxBase& obj_ctx,
+  virtual int read(const DoutPrefixProvider *dpp,
+                   RGWSysObjectCtxBase& obj_ctx,
                    RGWSI_SysObj_Obj_GetObjState& read_state,
                    RGWObjVersionTracker *objv_tracker,
                    const rgw_raw_obj& obj,
@@ -69,7 +70,7 @@ protected:
                          RGWObjVersionTracker *objv_tracker,
                          optional_yield y);
 
-  virtual int get_attr(const rgw_raw_obj& obj, const char *name, bufferlist *dest,
+  virtual int get_attr(const DoutPrefixProvider *dpp, const rgw_raw_obj& obj, const char *name, bufferlist *dest,
                        optional_yield y);
 
   virtual int set_attrs(const rgw_raw_obj& obj,
