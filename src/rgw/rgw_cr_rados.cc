@@ -99,7 +99,7 @@ void RGWAsyncRadosProcessor::queue(RGWAsyncRadosRequest *req) {
   req_wq.queue(req);
 }
 
-int RGWAsyncGetSystemObj::_send_request()
+int RGWAsyncGetSystemObj::_send_request(const DoutPrefixProvider *dpp)
 {
   map<string, bufferlist> *pattrs = want_attrs ? &attrs : nullptr;
 

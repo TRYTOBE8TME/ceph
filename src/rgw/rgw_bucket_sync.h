@@ -279,6 +279,7 @@ static inline ostream& operator<<(ostream& os, const RGWBucketSyncFlowManager::e
 }
 
 class RGWBucketSyncPolicyHandler {
+  const DoutPrefixProvider *dpp;
   bool legacy_config{false};
   const RGWBucketSyncPolicyHandler *parent{nullptr};
   RGWSI_Zone *zone_svc;
@@ -331,7 +332,7 @@ public:
   RGWBucketSyncPolicyHandler *alloc_child(const rgw_bucket& bucket,
                                           std::optional<rgw_sync_policy_info> sync_policy) const;
 
-  int init(optional_yield y);
+  int init(const DoutPrefixProvider *dpp, optional_yield y);
 
   void reflect(RGWBucketSyncFlowManager::pipe_set *psource_pipes,
                RGWBucketSyncFlowManager::pipe_set *ptarget_pipes,

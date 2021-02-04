@@ -124,7 +124,7 @@ int RGWSI_Zone::do_start(optional_yield y, const DoutPrefixProvider *dpp)
     }
     // read period_config into current_period
     auto& period_config = current_period->get_config();
-    ret = period_config.read(sysobj_svc, zonegroup->realm_id, y);
+    ret = period_config.read(dpp, sysobj_svc, zonegroup->realm_id, y);
     if (ret < 0 && ret != -ENOENT) {
       ldout(cct, 0) << "ERROR: failed to read period config: "
           << cpp_strerror(ret) << dendl;
@@ -171,7 +171,7 @@ int RGWSI_Zone::do_start(optional_yield y, const DoutPrefixProvider *dpp)
 
   for (auto ziter : zonegroup->zones) {
     auto zone_handler = std::make_shared<RGWBucketSyncPolicyHandler>(this, sync_modules_svc, bucket_sync_svc, ziter.second.id);
-    ret = zone_handler->init(y);
+    ret = zone_handler->init(dpp, y);
     if (ret < 0) {
       lderr(cct) << "ERROR: could not initialize zone policy handler for zone=" << ziter.second.name << dendl;
       return ret;

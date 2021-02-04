@@ -127,7 +127,7 @@ public:
     // dump it to the supplied Formatter and return true. If not found,
     // it must return false.
     //
-    int call_inspect(const DoutPrefixProvider *dpp, const std::string& target, Formatter* f);
+    int call_inspect(const std::string& target, Formatter* f);
 
     // `call_erase` must erase the requested target and return true. If
     // the requested target does not exist, it should return false.

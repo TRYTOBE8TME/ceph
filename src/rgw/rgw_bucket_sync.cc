@@ -734,7 +734,7 @@ RGWBucketSyncPolicyHandler *RGWBucketSyncPolicyHandler::alloc_child(const rgw_bu
   return new RGWBucketSyncPolicyHandler(this, bucket, sync_policy);
 }
 
-int RGWBucketSyncPolicyHandler::init(optional_yield y)
+int RGWBucketSyncPolicyHandler::init(const DoutPrefixProvider *dpp, optional_yield y)
 {
   int r = bucket_sync_svc->get_bucket_sync_hints(dpp, bucket.value_or(rgw_bucket()),
 						 &source_hints,

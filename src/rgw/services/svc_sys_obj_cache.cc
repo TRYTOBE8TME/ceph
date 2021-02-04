@@ -499,7 +499,6 @@ static void cache_list_dump_helper(Formatter* f,
 }
 
 class RGWSI_SysObj_Cache_ASocketHook : public AdminSocketHook {
-  const DoutPrefixProvider *dpp;
   RGWSI_SysObj_Cache *svc;
 
   static constexpr std::string_view admin_commands[][2] = {
@@ -519,8 +518,7 @@ public:
     int start();
     void shutdown();
 
-    int call(const DoutPrefixProvider *dpp, 
-             std::string_view command, const cmdmap_t& cmdmap,
+    int call(std::string_view command, const cmdmap_t& cmdmap,
 	     Formatter *f,
 	     std::ostream& ss,
 	     bufferlist& out) override;
@@ -547,7 +545,6 @@ void RGWSI_SysObj_Cache_ASocketHook::shutdown()
 }
 
 int RGWSI_SysObj_Cache_ASocketHook::call(
-  const DoutPrefixProvider *dpp, 
   std::string_view command, const cmdmap_t& cmdmap,
   Formatter *f,
   std::ostream& ss,
@@ -564,7 +561,7 @@ int RGWSI_SysObj_Cache_ASocketHook::call(
     return 0;
   } else if (command == "cache inspect"sv) {
     const auto& target = boost::get<std::string>(cmdmap.at("target"));
-    if (svc->asocket.call_inspect(dpp, target, f)) {
+    if (svc->asocket.call_inspect(target, f)) {
       return 0;
     } else {
       ss << "Unable to find entry "s + target + ".\n";
@@ -615,7 +612,7 @@ void RGWSI_SysObj_Cache::ASocketHandler::call_list(const std::optional<std::stri
     });
 }
 
-int RGWSI_SysObj_Cache::ASocketHandler::call_inspect(const DoutPrefixProvider *dpp, const std::string& target, Formatter* f)
+int RGWSI_SysObj_Cache::ASocketHandler::call_inspect(const std::string& target, Formatter* f)
 {
   if (const auto entry = svc->cache.get(dpp, target)) {
     f->open_object_section("cache_entry");

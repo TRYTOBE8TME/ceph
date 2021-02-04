@@ -215,7 +215,7 @@ int RGWSI_Bucket_Sync_SObj::do_get_policy_handler(RGWSI_Bucket_X_Ctx& ctx,
 
   e.handler.reset(zone_policy_handler->alloc_child(bucket_info, std::move(attrs)));
 
-  r = e.handler->init(y);
+  r = e.handler->init(dpp, y);
   if (r < 0) {
     ldpp_dout(dpp, 20) << "ERROR: failed to init bucket sync policy handler: r=" << r << dendl;
     return r;

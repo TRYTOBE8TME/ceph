@@ -79,6 +79,7 @@ class RGWSI_Zone;
 
 class RGWSystemMetaObj {
 protected:
+  const DoutPrefixProvider *dpp;
   std::string id;
   std::string name;
 
@@ -88,9 +89,10 @@ protected:
 
   int store_name(bool exclusive, optional_yield y);
   int store_info(bool exclusive, optional_yield y);
-  int read_info(const std::string& obj_id, optional_yield y, bool old_format = false);
-  int read_id(const std::string& obj_name, std::string& obj_id, optional_yield y);
-  int read_default(RGWDefaultSystemMetaObjInfo& default_info,
+  int read_info(const DoutPrefixProvider *dpp, const std::string& obj_id, optional_yield y, bool old_format = false);
+  int read_id(const DoutPrefixProvider *dpp, const std::string& obj_name, std::string& obj_id, optional_yield y);
+  int read_default(const DoutPrefixProvider *dpp,
+                   RGWDefaultSystemMetaObjInfo& default_info,
 		   const std::string& oid,
 		   optional_yield y);
   /* read and use default id */
@@ -865,6 +867,7 @@ WRITE_CLASS_ENCODER(RGWPeriodMap)
 
 struct RGWPeriodConfig
 {
+  const DoutPrefixProvider *dpp;
   RGWQuotaInfo bucket_quota;
   RGWQuotaInfo user_quota;
 
@@ -888,7 +891,7 @@ struct RGWPeriodConfig
   // the period config must be stored in a local object outside of the period,
   // so that it can be used in a default configuration where no realm/period
   // exists
-  int read(RGWSI_SysObj *sysobj_svc, const std::string& realm_id, optional_yield y);
+  int read(const DoutPrefixProvider *dpp, RGWSI_SysObj *sysobj_svc, const std::string& realm_id, optional_yield y);
   int write(RGWSI_SysObj *sysobj_svc, const std::string& realm_id, optional_yield y);
 
   static std::string get_oid(const std::string& realm_id);
@@ -1043,6 +1046,7 @@ WRITE_CLASS_ENCODER(RGWPeriodLatestEpochInfo)
  */
 class RGWPeriod
 {
+  const DoutPrefixProvider *dpp;
   std::string id; //< a uuid
   epoch_t epoch{0};
   std::string predecessor_uuid;
@@ -1059,8 +1063,9 @@ class RGWPeriod
   CephContext *cct{nullptr};
   RGWSI_SysObj *sysobj_svc{nullptr};
 
-  int read_info(optional_yield y);
-  int read_latest_epoch(RGWPeriodLatestEpochInfo& epoch_info,
+  int read_info(const DoutPrefixProvider *dpp, optional_yield y);
+  int read_latest_epoch(const DoutPrefixProvider *dpp,
+                        RGWPeriodLatestEpochInfo& epoch_info,
 			optional_yield y,
                         RGWObjVersionTracker *objv = nullptr);
   int use_latest_epoch(optional_yield y);

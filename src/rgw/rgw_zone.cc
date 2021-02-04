@@ -393,7 +393,7 @@ int RGWSystemMetaObj::init(CephContext *_cct, RGWSI_SysObj *_sysobj_svc,
   return read_info(id, y, old_format);
 }
 
-int RGWSystemMetaObj::read_default(RGWDefaultSystemMetaObjInfo& default_info,
+int RGWSystemMetaObj::read_default(const DoutPrefixProvider *dpp, RGWDefaultSystemMetaObjInfo& default_info,
 				   const string& oid, optional_yield y)
 {
   using ceph::decode;
@@ -402,7 +402,7 @@ int RGWSystemMetaObj::read_default(RGWDefaultSystemMetaObjInfo& default_info,
 
   auto obj_ctx = sysobj_svc->init_obj_ctx();
   auto sysobj = sysobj_svc->get_obj(obj_ctx, rgw_raw_obj(pool, oid));
-  int ret = sysobj.rop().read(&bl, y);
+  int ret = sysobj.rop().read(dpp, &bl, y);
   if (ret < 0)
     return ret;
 
@@ -461,7 +461,7 @@ int RGWSystemMetaObj::set_as_default(optional_yield y, bool exclusive)
   return 0;
 }
 
-int RGWSystemMetaObj::read_id(const string& obj_name, string& object_id,
+int RGWSystemMetaObj::read_id(const DoutPrefixProvider *dpp, const string& obj_name, string& object_id,
 			      optional_yield y)
 {
   using ceph::decode;
@@ -472,7 +472,7 @@ int RGWSystemMetaObj::read_id(const string& obj_name, string& object_id,
 
   auto obj_ctx = sysobj_svc->init_obj_ctx();
   auto sysobj = sysobj_svc->get_obj(obj_ctx, rgw_raw_obj(pool, oid));
-  int ret = sysobj.rop().read(&bl, y);
+  int ret = sysobj.rop().read(dpp, &bl, y);
   if (ret < 0) {
     return ret;
   }
@@ -594,7 +594,7 @@ int RGWSystemMetaObj::rename(const string& new_name, optional_yield y)
   return ret;
 }
 
-int RGWSystemMetaObj::read_info(const string& obj_id, optional_yield y,
+int RGWSystemMetaObj::read_info(const DoutPrefixProvider *dpp, const string& obj_id, optional_yield y,
 				bool old_format)
 {
   rgw_pool pool(get_pool(cct));
@@ -605,7 +605,7 @@ int RGWSystemMetaObj::read_info(const string& obj_id, optional_yield y,
 
   auto obj_ctx = sysobj_svc->init_obj_ctx();
   auto sysobj = sysobj_svc->get_obj(obj_ctx, rgw_raw_obj{pool, oid});
-  int ret = sysobj.rop().read(&bl, y);
+  int ret = sysobj.rop().read(dpp, &bl, y);
   if (ret < 0) {
     ldout(cct, 0) << "failed reading obj info from " << pool << ":" << oid << ": " << cpp_strerror(-ret) << dendl;
     return ret;
@@ -885,7 +885,7 @@ rgw_pool RGWPeriodConfig::get_pool(CephContext *cct)
   return {pool_name};
 }
 
-int RGWPeriodConfig::read(RGWSI_SysObj *sysobj_svc, const std::string& realm_id,
+int RGWPeriodConfig::read(const DoutPrefixProvider *dpp, RGWSI_SysObj *sysobj_svc, const std::string& realm_id,
 			  optional_yield y)
 {
   const auto& pool = get_pool(sysobj_svc->ctx());
@@ -894,7 +894,7 @@ int RGWPeriodConfig::read(RGWSI_SysObj *sysobj_svc, const std::string& realm_id,
 
   auto obj_ctx = sysobj_svc->init_obj_ctx();
   auto sysobj = sysobj_svc->get_obj(obj_ctx, rgw_raw_obj{pool, oid});
-  int ret = sysobj.rop().read(&bl, y);
+  int ret = sysobj.rop().read(dpp, &bl, y);
   if (ret < 0) {
     return ret;
   }
@@ -1019,7 +1019,8 @@ const string RGWPeriod::get_period_oid() const
   return oss.str();
 }
 
-int RGWPeriod::read_latest_epoch(RGWPeriodLatestEpochInfo& info,
+int RGWPeriod::read_latest_epoch(const DoutPrefixProvider *dpp,
+                                 RGWPeriodLatestEpochInfo& info,
 				 optional_yield y,
                                  RGWObjVersionTracker *objv)
 {
@@ -1029,7 +1030,7 @@ int RGWPeriod::read_latest_epoch(RGWPeriodLatestEpochInfo& info,
   bufferlist bl;
   auto obj_ctx = sysobj_svc->init_obj_ctx();
   auto sysobj = sysobj_svc->get_obj(obj_ctx, rgw_raw_obj{pool, oid});
-  int ret = sysobj.rop().read(&bl, y);
+  int ret = sysobj.rop().read(dpp, &bl, y);
   if (ret < 0) {
     ldout(cct, 1) << "error read_lastest_epoch " << pool << ":" << oid << dendl;
     return ret;
@@ -1169,7 +1170,7 @@ int RGWPeriod::delete_obj(optional_yield y)
   return ret;
 }
 
-int RGWPeriod::read_info(optional_yield y)
+int RGWPeriod::read_info(const DoutPrefixProvider *dpp, optional_yield y)
 {
   rgw_pool pool(get_pool(cct));
 
@@ -1177,7 +1178,7 @@ int RGWPeriod::read_info(optional_yield y)
 
   auto obj_ctx = sysobj_svc->init_obj_ctx();
   auto sysobj = sysobj_svc->get_obj(obj_ctx, rgw_raw_obj{pool, get_period_oid()});
-  int ret = sysobj.rop().read(&bl, y);
+  int ret = sysobj.rop().read(dpp, &bl, y);
   if (ret < 0) {
     ldout(cct, 0) << "failed reading obj info from " << pool << ":" << get_period_oid() << ": " << cpp_strerror(-ret) << dendl;
     return ret;
