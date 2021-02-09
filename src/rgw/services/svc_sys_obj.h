@@ -48,7 +48,6 @@ public:
     }
 
     struct ROp {
-      const DoutPrefixProvider *dpp;
       Obj& source;
 
       ceph::static_ptr<RGWSI_SysObj_Obj_GetObjState, sizeof(RGWSI_SysObj_Core_GetObjState)> state;

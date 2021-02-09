@@ -21,7 +21,6 @@ class RGWSI_SysObj_Cache : public RGWSI_SysObj_Core
 
   RGWSI_Notify *notify_svc{nullptr};
   ObjectCache cache;
-  const DoutPrefixProvider *dpp;
 
   std::shared_ptr<RGWSI_SysObj_Cache_CB> cb;
 
