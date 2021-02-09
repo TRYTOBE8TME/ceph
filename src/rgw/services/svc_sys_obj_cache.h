@@ -21,7 +21,6 @@ class RGWSI_SysObj_Cache : public RGWSI_SysObj_Core
 
   RGWSI_Notify *notify_svc{nullptr};
   ObjectCache cache;
-  const DoutPrefixProvider *dpp;
 
   std::shared_ptr<RGWSI_SysObj_Cache_CB> cb;
 
@@ -91,7 +90,8 @@ protected:
                        ObjectCacheInfo& obj_info, int op,
                        optional_yield y);
 
-  int watch_cb(uint64_t notify_id,
+  int watch_cb(const DoutPrefixProvider *dpp,
+               uint64_t notify_id,
                uint64_t cookie,
                uint64_t notifier_id,
                bufferlist& bl);
@@ -103,7 +103,8 @@ public:
     cache.set_ctx(cct);
   }
 
-  bool chain_cache_entry(std::initializer_list<rgw_cache_entry_info *> cache_info_entries,
+  bool chain_cache_entry(const DoutPrefixProvider *dpp,
+                         std::initializer_list<rgw_cache_entry_info *> cache_info_entries,
                          RGWChainedCache::Entry *chained_entry);
   void register_chained_cache(RGWChainedCache *cc);
   void unregister_chained_cache(RGWChainedCache *cc);
@@ -187,7 +188,7 @@ public:
     return iter->second.first;
   }
 
-  bool put(RGWSI_SysObj_Cache *svc, const string& key, T *entry,
+  bool put(const DoutPrefixProvider *dpp, RGWSI_SysObj_Cache *svc, const string& key, T *entry,
 	   std::initializer_list<rgw_cache_entry_info *> cache_info_entries) {
     if (!svc) {
       return false;
@@ -196,7 +197,7 @@ public:
     Entry chain_entry(this, key, entry);
 
     /* we need the svc cache to call us under its lock to maintain lock ordering */
-    return svc->chain_cache_entry(cache_info_entries, &chain_entry);
+    return svc->chain_cache_entry(dpp, cache_info_entries, &chain_entry);
   }
 
   void chain_cb(const string& key, void *data) override {

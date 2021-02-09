@@ -70,7 +70,8 @@ private:
   void add_watcher(int i);
   void remove_watcher(int i);
 
-  int watch_cb(uint64_t notify_id,
+  int watch_cb(const DoutPrefixProvider *dpp,
+               uint64_t notify_id,
                uint64_t cookie,
                uint64_t notifier_id,
                bufferlist& bl);
@@ -89,7 +90,8 @@ public:
   class CB {
     public:
       virtual ~CB() {}
-      virtual int watch_cb(uint64_t notify_id,
+      virtual int watch_cb(const DoutPrefixProvider *dpp,
+                           uint64_t notify_id,
                            uint64_t cookie,
                            uint64_t notifier_id,
                            bufferlist& bl) = 0;

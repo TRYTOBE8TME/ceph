@@ -47,7 +47,7 @@ bool topics_has_endpoint_secret(const rgw_pubsub_topics& topics) {
     return false;
 }
 
-void RGWPSCreateTopicOp::execute(optional_yield y) {
+void RGWPSCreateTopicOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;
@@ -56,13 +56,13 @@ void RGWPSCreateTopicOp::execute(optional_yield y) {
   ps.emplace(store, s->owner.get_id().tenant);
   op_ret = ps->create_topic(this, topic_name, dest, topic_arn, opaque_data, y);
   if (op_ret < 0) {
-    ldout(s->cct, 1) << "failed to create topic '" << topic_name << "', ret=" << op_ret << dendl;
+    ldpp_dout(this, 1) << "failed to create topic '" << topic_name << "', ret=" << op_ret << dendl;
     return;
   }
-  ldout(s->cct, 20) << "successfully created topic '" << topic_name << "'" << dendl;
+  ldpp_dout(s, 20) << "successfully created topic '" << topic_name << "'" << dendl;
 }
 
-void RGWPSListTopicsOp::execute(optional_yield y) {
+void RGWPSListTopicsOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   ps.emplace(store, s->owner.get_id().tenant);
   op_ret = ps->get_topics(&result);
   // if there are no topics it is not considered an error
@@ -76,10 +76,10 @@ void RGWPSListTopicsOp::execute(optional_yield y) {
     op_ret = -EPERM;
     return;
   }
-  ldout(s->cct, 20) << "successfully got topics" << dendl;
+  ldpp_dout(s, 20) << "successfully got topics" << dendl;
 }
 
-void RGWPSGetTopicOp::execute(optional_yield y) {
+void RGWPSGetTopicOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;
@@ -95,10 +95,10 @@ void RGWPSGetTopicOp::execute(optional_yield y) {
     ldout(s->cct, 1) << "failed to get topic '" << topic_name << "', ret=" << op_ret << dendl;
     return;
   }
-  ldout(s->cct, 1) << "successfully got topic '" << topic_name << "'" << dendl;
+  ldpp_dout(s, 1) << "successfully got topic '" << topic_name << "'" << dendl;
 }
 
-void RGWPSDeleteTopicOp::execute(optional_yield y) {
+void RGWPSDeleteTopicOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;
@@ -112,7 +112,7 @@ void RGWPSDeleteTopicOp::execute(optional_yield y) {
   ldpp_dout(this, 1) << "successfully removed topic '" << topic_name << "'" << dendl;
 }
 
-void RGWPSCreateSubOp::execute(optional_yield y) {
+void RGWPSCreateSubOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;
@@ -127,7 +127,7 @@ void RGWPSCreateSubOp::execute(optional_yield y) {
   ldpp_dout(this, 20) << "successfully created subscription '" << sub_name << "'" << dendl;
 }
 
-void RGWPSGetSubOp::execute(optional_yield y) {
+void RGWPSGetSubOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;
@@ -144,10 +144,10 @@ void RGWPSGetSubOp::execute(optional_yield y) {
     ldout(s->cct, 1) << "failed to get subscription '" << sub_name << "', ret=" << op_ret << dendl;
     return;
   }
-  ldout(s->cct, 20) << "successfully got subscription '" << sub_name << "'" << dendl;
+  ldpp_dout(s, 20) << "successfully got subscription '" << sub_name << "'" << dendl;
 }
 
-void RGWPSDeleteSubOp::execute(optional_yield y) {
+void RGWPSDeleteSubOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;
@@ -162,7 +162,7 @@ void RGWPSDeleteSubOp::execute(optional_yield y) {
   ldpp_dout(this, 20) << "successfully removed subscription '" << sub_name << "'" << dendl;
 }
 
-void RGWPSAckSubEventOp::execute(optional_yield y) {
+void RGWPSAckSubEventOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;
@@ -177,7 +177,7 @@ void RGWPSAckSubEventOp::execute(optional_yield y) {
   ldpp_dout(this, 20) << "successfully acked event on subscription '" << sub_name << "'" << dendl;
 }
 
-void RGWPSPullSubEventsOp::execute(optional_yield y) {
+void RGWPSPullSubEventsOp::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;

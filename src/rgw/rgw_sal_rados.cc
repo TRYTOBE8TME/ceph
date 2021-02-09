@@ -165,7 +165,7 @@ int RGWRadosBucket::remove_bucket(const DoutPrefixProvider *dpp, bool delete_chi
 
   if (forward_to_master) {
     bufferlist in_data;
-    ret = store->forward_request_to_master(owner, &ot.read_version, in_data, nullptr, *req_info, y);
+    ret = store->forward_request_to_master(dpp, owner, &ot.read_version, in_data, nullptr, *req_info, y);
     if (ret < 0) {
       if (ret == -ENOENT) {
 	/* adjust error, we want to return with NoSuchBucket and not
@@ -891,7 +891,8 @@ int RGWRadosStore::get_bucket(const DoutPrefixProvider *dpp, RGWUser* u, const s
   return get_bucket(dpp, u, b, bucket, y);
 }
 
-static int decode_policy(CephContext *cct,
+static int decode_policy(const DoutPrefixProvider *dpp,
+                         CephContext *cct,
                          bufferlist& bl,
                          RGWAccessControlPolicy *policy)
 {
@@ -903,7 +904,7 @@ static int decode_policy(CephContext *cct,
     return -EIO;
   }
   if (cct->_conf->subsys.should_gather<ceph_subsys_rgw, 15>()) {
-    ldout(cct, 15) << __func__ << " Read AccessControlPolicy";
+    ldpp_dout(dpp, 15) << __func__ << " Read AccessControlPolicy";
     RGWAccessControlPolicy_S3 *s3policy = static_cast<RGWAccessControlPolicy_S3 *>(policy);
     s3policy->to_xml(*_dout);
     *_dout << dendl;
@@ -920,7 +921,7 @@ static int rgw_op_get_bucket_policy_from_attr(const DoutPrefixProvider *dpp, RGW
   auto aiter = bucket_attrs.find(RGW_ATTR_ACL);
 
   if (aiter != bucket_attrs.end()) {
-    int ret = decode_policy(store->ctx(), aiter->second, policy);
+    int ret = decode_policy(dpp, store->ctx(), aiter->second, policy);
     if (ret < 0)
       return ret;
   } else {
@@ -940,7 +941,8 @@ bool RGWRadosStore::is_meta_master()
   return svc()->zone->is_meta_master();
 }
 
-int RGWRadosStore::forward_request_to_master(RGWUser* user, obj_version *objv,
+int RGWRadosStore::forward_request_to_master(const DoutPrefixProvider *dpp,
+                                             RGWUser* user, obj_version *objv,
 					     bufferlist& in_data,
 					     JSONParser *jp, req_info& info,
 					     optional_yield y)
@@ -954,17 +956,17 @@ int RGWRadosStore::forward_request_to_master(RGWUser* user, obj_version *objv,
     ldout(ctx(), 0) << "rest connection is invalid" << dendl;
     return -EINVAL;
   }
-  ldout(ctx(), 0) << "sending request to master zonegroup" << dendl;
+  ldpp_dout(dpp, 0) << "sending request to master zonegroup" << dendl;
   bufferlist response;
   string uid_str = user->get_id().to_str();
 #define MAX_REST_RESPONSE (128 * 1024) // we expect a very small response
-  int ret = svc()->zone->get_master_conn()->forward(rgw_user(uid_str), info,
+  int ret = svc()->zone->get_master_conn()->forward(dpp, rgw_user(uid_str), info,
                                                     objv, MAX_REST_RESPONSE,
 						    &in_data, &response, y);
   if (ret < 0)
     return ret;
 
-  ldout(ctx(), 20) << "response: " << response.c_str() << dendl;
+  ldpp_dout(dpp, 20) << "response: " << response.c_str() << dendl;
   if (jp && !jp->parse(response.c_str(), response.length())) {
     ldout(ctx(), 0) << "failed parsing response from master zonegroup" << dendl;
     return -EINVAL;
@@ -1059,7 +1061,7 @@ int RGWRadosStore::create_bucket(const DoutPrefixProvider *dpp,
 
   if (!svc()->zone->is_meta_master()) {
     JSONParser jp;
-    ret = forward_request_to_master(&u, NULL, in_data, &jp, req_info, y);
+    ret = forward_request_to_master(dpp, &u, NULL, in_data, &jp, req_info, y);
     if (ret < 0) {
       return ret;
     }

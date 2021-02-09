@@ -16,7 +16,7 @@
 
 static string notify_oid_prefix = "notify";
 
-class RGWWatcher : public librados::WatchCtx2 {
+class RGWWatcher : public DoutPrefixProvider , public librados::WatchCtx2 {
   CephContext *cct;
   RGWSI_Notify *svc;
   int index;
@@ -33,13 +33,18 @@ class RGWWatcher : public librados::WatchCtx2 {
         watcher->reinit();
       }
   };
+
+  CephContext *get_cct() const { return cct; }
+  unsigned get_subsys() const { return dout_subsys; }
+  std::ostream& gen_prefix(std::ostream& out) const { return out << "rgw watcher librados: "; }
+
 public:
   RGWWatcher(CephContext *_cct, RGWSI_Notify *s, int i, RGWSI_RADOS::Obj& o) : cct(_cct), svc(s), index(i), obj(o), watch_handle(0) {}
   void handle_notify(uint64_t notify_id,
 		     uint64_t cookie,
 		     uint64_t notifier_id,
 		     bufferlist& bl) override {
-    ldout(cct, 10) << "RGWWatcher::handle_notify() "
+    ldpp_dout(this, 10) << "RGWWatcher::handle_notify() "
                    << " notify_id " << notify_id
                    << " cookie " << cookie
                    << " notifier " << notifier_id
@@ -49,14 +54,14 @@ public:
 	(svc->inject_notify_timeout_probability > 0 &&
          (svc->inject_notify_timeout_probability >
 	  ceph::util::generate_random_number(0.0, 1.0)))) {
-      ldout(cct, 0)
+      ldpp_dout(this, 0)
 	<< "RGWWatcher::handle_notify() dropping notification! "
 	<< "If this isn't what you want, set "
 	<< "rgw_inject_notify_timeout_probability to zero!" << dendl;
       return;
     }
 
-    svc->watch_cb(notify_id, cookie, notifier_id, bl);
+    svc->watch_cb(this, notify_id, cookie, notifier_id, bl);
 
     bufferlist reply_bl; // empty reply payload
     obj.notify_ack(notify_id, cookie, reply_bl);
@@ -332,14 +337,15 @@ void RGWSI_Notify::remove_watcher(int i)
   }
 }
 
-int RGWSI_Notify::watch_cb(uint64_t notify_id,
+int RGWSI_Notify::watch_cb(const DoutPrefixProvider *dpp,
+                           uint64_t notify_id,
                            uint64_t cookie,
                            uint64_t notifier_id,
                            bufferlist& bl)
 {
   std::shared_lock l{watchers_lock};
   if (cb) {
-    return cb->watch_cb(notify_id, cookie, notifier_id, bl);
+    return cb->watch_cb(dpp, notify_id, cookie, notifier_id, bl);
   }
   return 0;
 }

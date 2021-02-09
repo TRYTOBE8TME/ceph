@@ -324,7 +324,7 @@ int RGWSI_Bucket_SObj::read_bucket_instance_info(RGWSI_Bucket_BI_Ctx& ctx,
   }
 
   /* chain to only bucket instance and *not* bucket entrypoint */
-  if (!binfo_cache->put(svc.cache, cache_key, &e, {&ci})) {
+  if (!binfo_cache->put(dpp, svc.cache, cache_key, &e, {&ci})) {
     ldpp_dout(dpp, 20) << "couldn't put binfo cache entry, might have raced with data changes" << dendl;
   }
 
@@ -469,7 +469,7 @@ int RGWSI_Bucket_SObj::read_bucket_info(RGWSI_Bucket_X_Ctx& ctx,
     *pattrs = e.attrs;
 
   /* chain to both bucket entry point and bucket instance */
-  if (!binfo_cache->put(svc.cache, cache_key, &e, {&entry_cache_info, &cache_info})) {
+  if (!binfo_cache->put(dpp, svc.cache, cache_key, &e, {&entry_cache_info, &cache_info})) {
     ldpp_dout(dpp, 20) << "couldn't put binfo cache entry, might have raced with data changes" << dendl;
   }
 

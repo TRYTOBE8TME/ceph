@@ -26,7 +26,6 @@ struct rgw_sync_policy_info;
 
 class RGWSI_Zone : public RGWServiceInstance
 {
-  const DoutPrefixProvider *dpp;
   friend struct RGWServices_Def;
 
   RGWSI_SysObj *sysobj_svc{nullptr};
