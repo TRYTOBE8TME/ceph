@@ -79,7 +79,6 @@ class RGWSI_Zone;
 
 class RGWSystemMetaObj {
 protected:
-  const DoutPrefixProvider *dpp;
   std::string id;
   std::string name;
 
@@ -869,7 +868,6 @@ WRITE_CLASS_ENCODER(RGWPeriodMap)
 
 struct RGWPeriodConfig
 {
-  const DoutPrefixProvider *dpp;
   RGWQuotaInfo bucket_quota;
   RGWQuotaInfo user_quota;
 
@@ -1048,7 +1046,6 @@ WRITE_CLASS_ENCODER(RGWPeriodLatestEpochInfo)
  */
 class RGWPeriod
 {
-  const DoutPrefixProvider *dpp;
   std::string id; //< a uuid
   epoch_t epoch{0};
   std::string predecessor_uuid;

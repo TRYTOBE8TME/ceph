@@ -35,7 +35,6 @@ struct rgw_sync_bucket_entity;
 
 class RGWSI_Bucket_Sync_SObj : public RGWSI_Bucket_Sync
 {
-  const DoutPrefixProvider *dpp;
   struct bucket_sync_policy_cache_entry {
     std::shared_ptr<RGWBucketSyncPolicyHandler> handler;
   };

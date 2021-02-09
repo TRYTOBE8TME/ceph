@@ -155,7 +155,6 @@ struct ObjectCacheEntry {
 };
 
 class ObjectCache {
-  const DoutPrefixProvider *dpp;
   std::unordered_map<string, ObjectCacheEntry> cache_map;
   std::list<string> lru;
   unsigned long lru_size;

@@ -294,7 +294,6 @@ static bool diff_sets(std::set<rgw_bucket>& orig_set,
 
 class RGWSI_BS_SObj_HintIndexObj
 {
-  const DoutPrefixProvider *dpp;
   friend class RGWSI_Bucket_Sync_SObj;
 
   CephContext *cct;
