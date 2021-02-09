@@ -235,7 +235,7 @@ int RGWSI_Bucket_Sync_SObj::do_get_policy_handler(RGWSI_Bucket_X_Ctx& ctx,
     return r;
   }
 
-  if (!sync_policy_cache->put(svc.cache, cache_key, &e, {&cache_info})) {
+  if (!sync_policy_cache->put(dpp, svc.cache, cache_key, &e, {&cache_info})) {
     ldpp_dout(dpp, 20) << "couldn't put bucket_sync_policy cache entry, might have raced with data changes" << dendl;
   }
 

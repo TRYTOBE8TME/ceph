@@ -1095,7 +1095,8 @@ public:
 
   int rewrite_obj(RGWBucketInfo& dest_bucket_info, rgw::sal::RGWObject* obj, const DoutPrefixProvider *dpp, optional_yield y);
 
-  int stat_remote_obj(RGWObjectCtx& obj_ctx,
+  int stat_remote_obj(const DoutPrefixProvider *dpp,
+               RGWObjectCtx& obj_ctx,
                const rgw_user& user_id,
                req_info *info,
                const rgw_zone_id& source_zone,
@@ -1304,7 +1305,7 @@ public:
                              optional_yield y,
                              const DoutPrefixProvider *dpp);
 
-  void bucket_index_guard_olh_op(RGWObjState& olh_state, librados::ObjectOperation& op);
+  void bucket_index_guard_olh_op(const DoutPrefixProvider *dpp, RGWObjState& olh_state, librados::ObjectOperation& op);
   int olh_init_modification(const DoutPrefixProvider *dpp, const RGWBucketInfo& bucket_info, RGWObjState& state, const rgw_obj& olh_obj, string *op_tag);
   int olh_init_modification_impl(const DoutPrefixProvider *dpp, const RGWBucketInfo& bucket_info, RGWObjState& state, const rgw_obj& olh_obj, string *op_tag);
   int bucket_index_link_olh(const DoutPrefixProvider *dpp, 

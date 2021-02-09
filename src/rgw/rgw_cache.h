@@ -168,7 +168,7 @@ class ObjectCache {
   bool enabled;
   ceph::timespan expiry;
 
-  void touch_lru(const string& name, ObjectCacheEntry& entry,
+  void touch_lru(const DoutPrefixProvider *dpp, const string& name, ObjectCacheEntry& entry,
 		 std::list<string>::iterator& lru_iter);
   void remove_lru(const string& name, std::list<string>::iterator& lru_iter);
   void invalidate_lru(ObjectCacheEntry& entry);
@@ -198,15 +198,16 @@ public:
     }
   }
 
-  void put(const std::string& name, ObjectCacheInfo& bl, rgw_cache_entry_info *cache_info);
-  bool remove(const std::string& name);
+  void put(const DoutPrefixProvider *dpp, const std::string& name, ObjectCacheInfo& bl, rgw_cache_entry_info *cache_info);
+  bool remove(const DoutPrefixProvider *dpp, const std::string& name);
   void set_ctx(CephContext *_cct) {
     cct = _cct;
     lru_window = cct->_conf->rgw_cache_lru_size / 2;
     expiry = std::chrono::seconds(cct->_conf.get_val<uint64_t>(
 						"rgw_cache_expiry_interval"));
   }
-  bool chain_cache_entry(std::initializer_list<rgw_cache_entry_info*> cache_info_entries,
+  bool chain_cache_entry(const DoutPrefixProvider *dpp,
+                         std::initializer_list<rgw_cache_entry_info*> cache_info_entries,
 			 RGWChainedCache::Entry *chained_entry);
 
   void set_enabled(bool status);

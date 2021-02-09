@@ -301,7 +301,7 @@ public:
     http_manager.start();
   }
 
-  int notify_all(map<rgw_zone_id, RGWRESTConn *>& conn_map, set<int>& shards) {
+  int notify_all(const DoutPrefixProvider *dpp, map<rgw_zone_id, RGWRESTConn *>& conn_map, set<int>& shards) {
     rgw_http_param_pair pairs[] = { { "type", "metadata" },
                                     { "notify", NULL },
                                     { NULL, NULL } };
@@ -314,7 +314,7 @@ public:
 
       stacks.push_back(stack);
     }
-    return run(stacks);
+    return run(dpp, stacks);
   }
 };
 
@@ -328,7 +328,7 @@ public:
     http_manager.start();
   }
 
-  int notify_all(map<rgw_zone_id, RGWRESTConn *>& conn_map,
+  int notify_all(const DoutPrefixProvider *dpp, map<rgw_zone_id, RGWRESTConn *>& conn_map,
 		 bc::flat_map<int, bc::flat_set<string> >& shards) {
     rgw_http_param_pair pairs[] = { { "type", "data" },
                                     { "notify", NULL },
@@ -343,7 +343,7 @@ public:
 
       stacks.push_back(stack);
     }
-    return run(stacks);
+    return run(dpp, stacks);
   }
 };
 
@@ -373,9 +373,9 @@ void *RGWRadosThread::Worker::entry() {
 
   do {
     auto start = ceph::real_clock::now();
-    int r = processor->process();
+    int r = processor->process(this);
     if (r < 0) {
-      dout(0) << "ERROR: processor->process() returned error r=" << r << dendl;
+      ldpp_dout(this, 0) << "ERROR: processor->process() returned error r=" << r << dendl;
     }
 
     if (processor->going_down())
@@ -417,10 +417,10 @@ public:
   RGWMetaNotifier(RGWRados *_store, RGWMetadataLog* log)
     : RGWRadosThread(_store, "meta-notifier"), notify_mgr(_store), log(log) {}
 
-  int process() override;
+  int process(const DoutPrefixProvider *dpp) override;
 };
 
-int RGWMetaNotifier::process()
+int RGWMetaNotifier::process(const DoutPrefixProvider *dpp)
 {
   set<int> shards;
 
@@ -431,10 +431,10 @@ int RGWMetaNotifier::process()
   }
 
   for (set<int>::iterator iter = shards.begin(); iter != shards.end(); ++iter) {
-    ldout(cct, 20) << __func__ << "(): notifying mdlog change, shard_id=" << *iter << dendl;
+    ldpp_dout(dpp, 20) << __func__ << "(): notifying mdlog change, shard_id=" << *iter << dendl;
   }
 
-  notify_mgr.notify_all(store->svc.zone->get_zone_conn_map(), shards);
+  notify_mgr.notify_all(dpp, store->svc.zone->get_zone_conn_map(), shards);
 
   return 0;
 }
@@ -451,10 +451,10 @@ class RGWDataNotifier : public RGWRadosThread {
 public:
   RGWDataNotifier(RGWRados *_store) : RGWRadosThread(_store, "data-notifier"), notify_mgr(_store) {}
 
-  int process() override;
+  int process(const DoutPrefixProvider *dpp) override;
 };
 
-int RGWDataNotifier::process()
+int RGWDataNotifier::process(const DoutPrefixProvider *dpp)
 {
   auto data_log = store->svc.datalog_rados;
   if (!data_log) {
@@ -468,11 +468,11 @@ int RGWDataNotifier::process()
   }
 
   for (const auto& [shard_id, keys] : shards) {
-    ldout(cct, 20) << __func__ << "(): notifying datalog change, shard_id="
+    ldpp_dout(dpp, 20) << __func__ << "(): notifying datalog change, shard_id="
 		   << shard_id << ": " << keys << dendl;
   }
 
-  notify_mgr.notify_all(store->svc.zone->get_zone_data_notify_to_map(), shards);
+  notify_mgr.notify_all(dpp, store->svc.zone->get_zone_data_notify_to_map(), shards);
 
   return 0;
 }
@@ -482,8 +482,8 @@ public:
   RGWSyncProcessorThread(RGWRados *_store, const string& thread_name = "radosgw") : RGWRadosThread(_store, thread_name) {}
   RGWSyncProcessorThread(RGWRados *_store) : RGWRadosThread(_store) {}
   ~RGWSyncProcessorThread() override {}
-  int init() override = 0 ;
-  int process() override = 0;
+  int init(const DoutPrefixProvider *dpp) override = 0 ;
+  int process(const DoutPrefixProvider *dpp) override = 0;
 };
 
 class RGWMetaSyncProcessorThread : public RGWSyncProcessorThread
@@ -507,17 +507,17 @@ public:
   }
   RGWMetaSyncStatusManager* get_manager() { return &sync; }
 
-  int init() override {
-    int ret = sync.init();
+  int init(const DoutPrefixProvider *dpp) override {
+    int ret = sync.init(dpp);
     if (ret < 0) {
-      ldout(store->ctx(), 0) << "ERROR: sync.init() returned " << ret << dendl;
+      ldpp_dout(dpp, 0) << "ERROR: sync.init() returned " << ret << dendl;
       return ret;
     }
     return 0;
   }
 
-  int process() override {
-    sync.run(null_yield);
+  int process(const DoutPrefixProvider *dpp) override {
+    sync.run(dpp, null_yield);
     return 0;
   }
 };
@@ -554,16 +554,16 @@ public:
   }
   RGWDataSyncStatusManager* get_manager() { return &sync; }
 
-  int init() override {
+  int init(const DoutPrefixProvider *dpp) override {
     return 0;
   }
 
-  int process() override {
+  int process(const DoutPrefixProvider *dpp) override {
     while (!initialized) {
       if (going_down()) {
         return 0;
       }
-      int ret = sync.init();
+      int ret = sync.init(dpp);
       if (ret >= 0) {
         initialized = true;
         break;
@@ -571,7 +571,7 @@ public:
       /* we'll be back! */
       return 0;
     }
-    sync.run();
+    sync.run(dpp);
     return 0;
   }
 };
@@ -596,10 +596,10 @@ public:
       trim_interval(interval, 0)
   {}
 
-  int init() override {
+  int init(const DoutPrefixProvider *dpp) override {
     return http.start();
   }
-  int process() override {
+  int process(const DoutPrefixProvider *dpp) override {
     list<RGWCoroutinesStack*> stacks;
     auto meta = new RGWCoroutinesStack(store->ctx(), &crs);
     meta->call(create_meta_log_trim_cr(this, store, &http,
@@ -619,7 +619,7 @@ public:
       stacks.push_back(bucket);
     }
 
-    crs.run(stacks);
+    crs.run(dpp, stacks);
     return 0;
   }
 
@@ -803,7 +803,7 @@ public:
   RGWIndexCompletionThread(RGWRados *_store)
     : RGWRadosThread(_store, "index-complete"), store(_store) {}
 
-  int process() override;
+  int process(const DoutPrefixProvider *dpp) override;
 
   void add_completion(complete_op_data *completion) {
     {
@@ -819,7 +819,7 @@ public:
   std::ostream& gen_prefix(std::ostream& out) const { return out << "rgw index completion thread: "; }
 };
 
-int RGWIndexCompletionThread::process()
+int RGWIndexCompletionThread::process(const DoutPrefixProvider *dpp)
 {
   list<complete_op_data *> comps;
 
@@ -914,9 +914,9 @@ public:
                          complete_op_data **result);
   bool handle_completion(completion_t cb, complete_op_data *arg);
 
-  int start() {
+  int start(const DoutPrefixProvider *dpp) {
     completion_thread = new RGWIndexCompletionThread(store);
-    int ret = completion_thread->init();
+    int ret = completion_thread->init(dpp);
     if (ret < 0) {
       return ret;
     }
@@ -1241,7 +1241,7 @@ int RGWRados::init_complete(const DoutPrefixProvider *dpp)
     auto async_processor = svc.rados->get_async_processor();
     std::lock_guard l{meta_sync_thread_lock};
     meta_sync_processor_thread = new RGWMetaSyncProcessorThread(this->store, async_processor);
-    ret = meta_sync_processor_thread->init();
+    ret = meta_sync_processor_thread->init(dpp);
     if (ret < 0) {
       ldpp_dout(dpp, 0) << "ERROR: failed to initialize meta sync thread" << dendl;
       return ret;
@@ -1264,7 +1264,7 @@ int RGWRados::init_complete(const DoutPrefixProvider *dpp)
     for (auto source_zone : svc.zone->get_data_sync_source_zones()) {
       ldpp_dout(dpp, 5) << "starting data sync thread for zone " << source_zone->name << dendl;
       auto *thread = new RGWDataSyncProcessorThread(this->store, svc.rados->get_async_processor(), source_zone);
-      ret = thread->init();
+      ret = thread->init(dpp);
       if (ret < 0) {
         ldpp_dout(dpp, 0) << "ERROR: failed to initialize data sync thread" << dendl;
         return ret;
@@ -1275,7 +1275,7 @@ int RGWRados::init_complete(const DoutPrefixProvider *dpp)
     auto interval = cct->_conf->rgw_sync_log_trim_interval;
     if (interval > 0) {
       sync_log_trimmer = new RGWSyncLogTrimThread(this->store, &*bucket_trim, interval);
-      ret = sync_log_trimmer->init();
+      ret = sync_log_trimmer->init(dpp);
       if (ret < 0) {
         ldpp_dout(dpp, 0) << "ERROR: failed to initialize sync log trim thread" << dendl;
         return ret;
@@ -1323,7 +1323,7 @@ int RGWRados::init_complete(const DoutPrefixProvider *dpp)
   }
 
   index_completion_manager = new RGWIndexCompletionManager(this);
-  ret = index_completion_manager->start();
+  ret = index_completion_manager->start(dpp);
   if (ret < 0) {
     return ret;
   }
@@ -3625,7 +3625,8 @@ public:
   }
 };
 
-int RGWRados::stat_remote_obj(RGWObjectCtx& obj_ctx,
+int RGWRados::stat_remote_obj(const DoutPrefixProvider *dpp,
+               RGWObjectCtx& obj_ctx,
                const rgw_user& user_id,
                req_info *info,
                const rgw_zone_id& source_zone,
@@ -3690,7 +3691,7 @@ int RGWRados::stat_remote_obj(RGWObjectCtx& obj_ctx,
   constexpr bool rgwx_stat = true;
   constexpr bool sync_manifest = true;
   constexpr bool skip_decrypt = true;
-  int ret = conn->get_obj(user_id, info, src_obj, pmod, unmod_ptr,
+  int ret = conn->get_obj(dpp, user_id, info, src_obj, pmod, unmod_ptr,
                       dest_mtime_weight.zone_short_id, dest_mtime_weight.pg_ver,
                       prepend_meta, get_op, rgwx_stat,
                       sync_manifest, skip_decrypt,
@@ -3904,7 +3905,7 @@ int RGWRados::fetch_remote_obj(RGWObjectCtx& obj_ctx,
   static constexpr bool rgwx_stat = false;
   static constexpr bool sync_manifest = true;
   static constexpr bool skip_decrypt = true;
-  ret = conn->get_obj(user_id, info, src_obj, pmod, unmod_ptr,
+  ret = conn->get_obj(dpp, user_id, info, src_obj, pmod, unmod_ptr,
                       dest_mtime_weight.zone_short_id, dest_mtime_weight.pg_ver,
                       prepend_meta, get_op, rgwx_stat,
                       sync_manifest, skip_decrypt,
@@ -6574,7 +6575,7 @@ int RGWRados::olh_init_modification_impl(const DoutPrefixProvider *dpp, const RG
    */
   if (has_tag) {
     /* guard against racing writes */
-    bucket_index_guard_olh_op(state, op);
+    bucket_index_guard_olh_op(dpp, state, op);
   }
 
   if (!has_tag) {
@@ -6842,9 +6843,9 @@ int RGWRados::bucket_index_link_olh(const DoutPrefixProvider *dpp, const RGWBuck
   return 0;
 }
 
-void RGWRados::bucket_index_guard_olh_op(RGWObjState& olh_state, ObjectOperation& op)
+void RGWRados::bucket_index_guard_olh_op(const DoutPrefixProvider *dpp, RGWObjState& olh_state, ObjectOperation& op)
 {
-  ldout(cct, 20) << __func__ << "(): olh_state.olh_tag=" << string(olh_state.olh_tag.c_str(), olh_state.olh_tag.length()) << dendl;
+  ldpp_dout(dpp, 20) << __func__ << "(): olh_state.olh_tag=" << string(olh_state.olh_tag.c_str(), olh_state.olh_tag.length()) << dendl;
   op.cmpxattr(RGW_ATTR_OLH_ID_TAG, CEPH_OSD_CMPXATTR_OP_EQ, olh_state.olh_tag);
 }
 
@@ -6961,7 +6962,7 @@ int RGWRados::repair_olh(const DoutPrefixProvider *dpp, RGWObjState* state, cons
   // rewrite OLH_ID_TAG and OLH_INFO from current olh
   ObjectWriteOperation op;
   // assert this is the same olh tag we think we're fixing
-  bucket_index_guard_olh_op(*state, op);
+  bucket_index_guard_olh_op(dpp, *state, op);
   // preserve existing mtime
   struct timespec mtime_ts = ceph::real_clock::to_timespec(state->mtime);
   op.mtime2(&mtime_ts);
@@ -7467,7 +7468,7 @@ int RGWRados::remove_olh_pending_entries(const DoutPrefixProvider *dpp, const RG
   auto i = pending_attrs.begin();
   while (i != pending_attrs.end()) {
     ObjectWriteOperation op;
-    bucket_index_guard_olh_op(state, op);
+    bucket_index_guard_olh_op(dpp, state, op);
 
     for (int n = 0; n < max_entries && i != pending_attrs.end(); ++n, ++i) {
       op.rmxattr(i->first.c_str());

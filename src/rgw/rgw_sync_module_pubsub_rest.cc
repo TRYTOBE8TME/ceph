@@ -369,10 +369,10 @@ private:
 
 public:
   const char* name() const override { return "pubsub_notification_create"; }
-  void execute(optional_yield y) override;
+  void execute(const DoutPrefixProvider *dpp, optional_yield y) override;
 };
 
-void RGWPSCreateNotif_ObjStore::execute(optional_yield y)
+void RGWPSCreateNotif_ObjStore::execute(const DoutPrefixProvider *dpp, optional_yield y)
 {
   ps.emplace(store, s->owner.get_id().tenant);
 
@@ -401,11 +401,11 @@ private:
   }
 
 public:
-  void execute(optional_yield y) override;
+  void execute(const DoutPrefixProvider *dpp, optional_yield y) override;
   const char* name() const override { return "pubsub_notification_delete"; }
 };
 
-void RGWPSDeleteNotif_ObjStore::execute(optional_yield y) {
+void RGWPSDeleteNotif_ObjStore::execute(const DoutPrefixProvider *dpp, optional_yield y) {
   op_ret = get_params();
   if (op_ret < 0) {
     return;
@@ -415,10 +415,10 @@ void RGWPSDeleteNotif_ObjStore::execute(optional_yield y) {
   auto b = ps->get_bucket(bucket_info.bucket);
   op_ret = b->remove_notification(this, topic_name, y);
   if (op_ret < 0) {
-    ldout(s->cct, 1) << "failed to remove notification from topic '" << topic_name << "', ret=" << op_ret << dendl;
+    ldpp_dout(s, 1) << "failed to remove notification from topic '" << topic_name << "', ret=" << op_ret << dendl;
     return;
   }
-  ldout(s->cct, 20) << "successfully removed notification from topic '" << topic_name << "'" << dendl;
+  ldpp_dout(dpp, 20) << "successfully removed notification from topic '" << topic_name << "'" << dendl;
 }
 
 // command: GET /notifications/bucket/<bucket>
@@ -431,7 +431,7 @@ private:
   }
 
 public:
-  void execute(optional_yield y) override;
+  void execute(const DoutPrefixProvider *dpp, optional_yield y) override;
   void send_response() override {
     if (op_ret) {
       set_req_state_err(s, op_ret);
@@ -448,7 +448,7 @@ public:
   const char* name() const override { return "pubsub_notifications_list"; }
 };
 
-void RGWPSListNotifs_ObjStore::execute(optional_yield y)
+void RGWPSListNotifs_ObjStore::execute(const DoutPrefixProvider *dpp, optional_yield y)
 {
   ps.emplace(store, s->owner.get_id().tenant);
   auto b = ps->get_bucket(bucket_info.bucket);

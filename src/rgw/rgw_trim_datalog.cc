@@ -42,7 +42,7 @@ class DatalogTrimImplCR : public RGWSimpleCoroutine {
 		      << " marker=" << marker;
   }
 
-  int send_request() override {
+  int send_request(const DoutPrefixProvider *dpp) override {
     set_status() << "sending request";
     cn = stack->create_completion_notifier();
     return store->svc()->datalog_rados->trim_entries(dpp, shard, marker,
@@ -118,10 +118,10 @@ class DataLogTrimCR : public RGWCoroutine {
       last_trim(last_trim)
   {}
 
-  int operate() override;
+  int operate(const DoutPrefixProvider *dpp) override;
 };
 
-int DataLogTrimCR::operate()
+int DataLogTrimCR::operate(const DoutPrefixProvider *dpp)
 {
   reenter(this) {
     ldpp_dout(dpp, 10) << "fetching sync status for zone " << zone_id << dendl;
@@ -210,10 +210,10 @@ class DataLogTrimPollCR : public RGWCoroutine {
       last_trim(num_shards)
   {}
 
-  int operate() override;
+  int operate(const DoutPrefixProvider *dpp) override;
 };
 
-int DataLogTrimPollCR::operate()
+int DataLogTrimPollCR::operate(const DoutPrefixProvider *dpp)
 {
   reenter(this) {
     for (;;) {
