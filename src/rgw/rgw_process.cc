@@ -123,7 +123,7 @@ int rgw_process_authenticated(RGWHandler_REST * const handler,
   }
 
   ldpp_dout(op, 2) << "init op" << dendl;
-  ret = op->init_processing(y);
+  ret = op->init_processing(op, y);
   if (ret < 0) {
     return ret;
   }

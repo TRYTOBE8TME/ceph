@@ -5042,7 +5042,7 @@ int RGWHandler_REST_S3Website::serve_errordoc(const DoutPrefixProvider *dpp, int
      getop->set_custom_http_response(http_ret);
   }
 
-  ret = getop->init_processing(y);
+  ret = getop->init_processing(dpp, y);
   if (ret < 0) {
     ldpp_dout(s, 20) << "serve_errordoc failed, init_processing ret=" << ret << dendl;
     return -1; // Trigger double error handler

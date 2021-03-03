@@ -285,7 +285,7 @@ namespace rgw {
       }
 
       ldpp_dout(s, 2) << "init op" << dendl;
-      ret = op->init_processing(null_yield);
+      ret = op->init_processing(s, null_yield);
       if (ret < 0) {
 	abort_req(s, op, ret);
 	goto done;
@@ -417,7 +417,7 @@ namespace rgw {
     }
 
     ldpp_dout(s, 2) << "init op" << dendl;
-    ret = op->init_processing(null_yield);
+    ret = op->init_processing(s, null_yield);
     if (ret < 0) {
       abort_req(s, op, ret);
       goto done;

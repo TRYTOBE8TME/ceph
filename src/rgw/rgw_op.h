@@ -154,7 +154,7 @@ public:
 
   int get_ret() const { return op_ret; }
 
-  virtual int init_processing(optional_yield y) {
+  virtual int init_processing(const DoutPrefixProvider *dpp, optional_yield y) {
     if (dialect_handler->supports_quota()) {
       op_ret = init_quota();
       if (op_ret < 0)
@@ -1188,7 +1188,7 @@ public:
     policy.set_ctx(s->cct);
   }
 
-  virtual int init_processing(optional_yield y) override;
+  virtual int init_processing(const DoutPrefixProvider *dpp, optional_yield y) override;
 
   void emplace_attr(std::string&& key, buffer::list&& bl) {
     attrs.emplace(std::move(key), std::move(bl)); /* key and bl are r-value refs */
@@ -1300,7 +1300,7 @@ public:
     RGWOp::init(store, s, h);
     policy.set_ctx(s->cct);
   }
-  int init_processing(optional_yield y) override;
+  int init_processing(const DoutPrefixProvider *dpp, optional_yield y) override;
   int verify_permission(optional_yield y) override;
   void pre_exec() override { }
   void execute(const DoutPrefixProvider *dpp, optional_yield y) override;
@@ -1455,7 +1455,7 @@ protected:
 
   bool need_to_check_storage_class = false;
 
-  int init_common();
+  int init_common(const DoutPrefixProvider *dpp);
 
 public:
   RGWCopyObj() {
@@ -2015,7 +2015,8 @@ static inline void format_xattr(std::string &xattr)
  * On failure returns a negative error code.
  *
  */
-inline int rgw_get_request_metadata(CephContext* const cct,
+inline int rgw_get_request_metadata(const DoutPrefixProvider *dpp,
+                                    CephContext* const cct,
 				    struct req_info& info,
 				    std::map<std::string, ceph::bufferlist>& attrs,
 				    const bool allow_empty_attrs = true)
@@ -2033,10 +2034,10 @@ inline int rgw_get_request_metadata(CephContext* const cct,
     std::string& xattr = kv.second;
 
     if (blocklisted_headers.count(name) == 1) {
-      lsubdout(cct, rgw, 10) << "skipping x>> " << name << dendl;
+      ldpp_subdout(dpp, rgw, 10) << "skipping x>> " << name << dendl;
       continue;
     } else if (allow_empty_attrs || !xattr.empty()) {
-      lsubdout(cct, rgw, 10) << "x>> " << name << ":" << xattr << dendl;
+      ldpp_subdout(dpp, rgw, 10) << "x>> " << name << ":" << xattr << dendl;
       format_xattr(xattr);
 
       std::string attr_name(RGW_ATTR_PREFIX);

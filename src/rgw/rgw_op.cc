@@ -3125,7 +3125,7 @@ void RGWCreateBucket::execute(const DoutPrefixProvider *dpp, optional_yield y)
   if (need_metadata_upload()) {
     /* It's supposed that following functions WILL NOT change any special
      * attributes (like RGW_ATTR_ACL) if they are already present in attrs. */
-    op_ret = rgw_get_request_metadata(s->cct, s->info, attrs, false);
+    op_ret = rgw_get_request_metadata(dpp, s->cct, s->info, attrs, false);
     if (op_ret < 0) {
       return;
     }
@@ -3219,7 +3219,7 @@ void RGWCreateBucket::execute(const DoutPrefixProvider *dpp, optional_yield y)
 
       attrs.clear();
 
-      op_ret = rgw_get_request_metadata(s->cct, s->info, attrs, false);
+      op_ret = rgw_get_request_metadata(dpp, s->cct, s->info, attrs, false);
       if (op_ret < 0) {
         return;
       }
@@ -3344,7 +3344,7 @@ void RGWDeleteBucket::execute(const DoutPrefixProvider *dpp, optional_yield y)
   return;
 }
 
-int RGWPutObj::init_processing(optional_yield y) {
+int RGWPutObj::init_processing(const DoutPrefixProvider *dpp, optional_yield y) {
   copy_source = url_decode(s->info.env->get("HTTP_X_AMZ_COPY_SOURCE", ""));
   copy_source_range = s->info.env->get("HTTP_X_AMZ_COPY_SOURCE_RANGE");
   size_t pos;
@@ -3438,7 +3438,7 @@ int RGWPutObj::init_processing(optional_yield y) {
     }
 
   } /* copy_source */
-  return RGWOp::init_processing(y);
+  return RGWOp::init_processing(dpp, y);
 }
 
 int RGWPutObj::verify_permission(optional_yield y)
@@ -4015,7 +4015,7 @@ void RGWPutObj::execute(const DoutPrefixProvider *dpp, optional_yield y)
   emplace_attr(RGW_ATTR_ETAG, std::move(bl));
 
   populate_with_generic_attrs(s, attrs);
-  op_ret = rgw_get_request_metadata(s->cct, s->info, attrs);
+  op_ret = rgw_get_request_metadata(dpp, s->cct, s->info, attrs);
   if (op_ret < 0) {
     return;
   }
@@ -4332,13 +4332,13 @@ void RGWPutMetadataAccount::filter_out_temp_url(map<string, bufferlist>& add_att
   }
 }
 
-int RGWPutMetadataAccount::init_processing(optional_yield y)
+int RGWPutMetadataAccount::init_processing(const DoutPrefixProvider *dpp, optional_yield y)
 {
   /* First, go to the base class. At the time of writing the method was
    * responsible only for initializing the quota. This isn't necessary
    * here as we are touching metadata only. I'm putting this call only
    * for the future. */
-  op_ret = RGWOp::init_processing(y);
+  op_ret = RGWOp::init_processing(dpp, y);
   if (op_ret < 0) {
     return op_ret;
   }
@@ -4361,7 +4361,7 @@ int RGWPutMetadataAccount::init_processing(optional_yield y)
     attrs.emplace(RGW_ATTR_ACL, std::move(acl_bl));
   }
 
-  op_ret = rgw_get_request_metadata(s->cct, s->info, attrs, false);
+  op_ret = rgw_get_request_metadata(dpp, s->cct, s->info, attrs, false);
   if (op_ret < 0) {
     return op_ret;
   }
@@ -4460,7 +4460,7 @@ void RGWPutMetadataBucket::execute(const DoutPrefixProvider *dpp, optional_yield
     return;
   }
 
-  op_ret = rgw_get_request_metadata(s->cct, s->info, attrs, false);
+  op_ret = rgw_get_request_metadata(dpp, s->cct, s->info, attrs, false);
   if (op_ret < 0) {
     return;
   }
@@ -4555,7 +4555,7 @@ void RGWPutMetadataObject::execute(const DoutPrefixProvider *dpp, optional_yield
     return;
   }
 
-  op_ret = rgw_get_request_metadata(s->cct, s->info, attrs);
+  op_ret = rgw_get_request_metadata(dpp, s->cct, s->info, attrs);
   if (op_ret < 0) {
     return;
   }
@@ -5018,7 +5018,7 @@ int RGWCopyObj::verify_permission(optional_yield y)
 }
 
 
-int RGWCopyObj::init_common()
+int RGWCopyObj::init_common(const DoutPrefixProvider *dpp)
 {
   if (if_mod) {
     if (parse_time(if_mod, &mod_time) < 0) {
@@ -5040,7 +5040,7 @@ int RGWCopyObj::init_common()
   dest_policy.encode(aclbl);
   emplace_attr(RGW_ATTR_ACL, std::move(aclbl));
 
-  op_ret = rgw_get_request_metadata(s->cct, s->info, attrs);
+  op_ret = rgw_get_request_metadata(dpp, s->cct, s->info, attrs);
   if (op_ret < 0) {
     return op_ret;
   }
@@ -5075,7 +5075,7 @@ void RGWCopyObj::pre_exec()
 
 void RGWCopyObj::execute(const DoutPrefixProvider *dpp, optional_yield y)
 {
-  if (init_common() < 0)
+  if (init_common(dpp) < 0)
     return;
 
   if (! s->object->get_bucket()) {
@@ -5770,7 +5770,7 @@ void RGWInitMultipart::execute(const DoutPrefixProvider *dpp, optional_yield y)
   if (op_ret != 0)
     return;
 
-  op_ret = rgw_get_request_metadata(s->cct, s->info, attrs);
+  op_ret = rgw_get_request_metadata(dpp, s->cct, s->info, attrs);
   if (op_ret < 0) {
     return;
   }
