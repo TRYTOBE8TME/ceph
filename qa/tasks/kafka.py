@@ -77,12 +77,13 @@ def run_kafka(ctx,config):
     assert isinstance(config, dict)
     log.info('Bringing up Zookeeper and Kafka services...')
     for (client,_) in config.items():
+        current_version = get_kafka_version(config)
         (remote,) = ctx.cluster.only(client).remotes.keys()
 
         ctx.cluster.only(client).run(
             args=['cd', '{tdir}'.format(tdir=get_kafka_dir(ctx, config)), run.Raw('&&'),
              './gradlew', 'jar', 
-             '-PscalaVersion=2.13.2'
+             '-PscalaVersion=2.13'
             ],
         )
 
