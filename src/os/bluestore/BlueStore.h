@@ -633,13 +633,17 @@ public:
     int16_t id = -1;                ///< id, for spanning blobs only, >= 0
     int16_t last_encoded_id = -1;   ///< (ephemeral) used during encoding only
     SharedBlobRef shared_blob;      ///< shared blob state (if any)
+    bool loaded = false;
+    CollectionRef collection;
+    uint64_t sbid_unloaded = 0;
 
     void set_shared_blob(SharedBlobRef sb) {
       ceph_assert((bool)sb);
       ceph_assert(!shared_blob);
+      sbid_unloaded = sb->get_sbid();
       shared_blob = sb;
-      ceph_assert(shared_blob->get_cache());
-      shared_blob->get_cache()->add_blob();
+      ceph_assert(get_cache());
+      get_cache()->add_blob();
     }
     BufferSpace bc;
   private:
@@ -675,8 +679,8 @@ public:
       return id >= 0;
     }
 
-    bool can_split() const {
-      std::lock_guard l(shared_blob->get_cache()->lock);
+    bool can_split() {
+      std::lock_guard l(get_cache()->lock);
       // splitting a BufferSpace writing list is too hard; don't try.
       return get_bc().writing.empty() &&
              used_in_blob.can_split() &&
@@ -749,6 +753,19 @@ public:
       if (--nref == 0)
 	delete this;
     }
+    bool is_loaded() const {
+      return shared_blob && shared_blob->is_loaded();
+    }
+    inline BufferCacheShard* get_cache() {
+      return shared_blob ? shared_blob->get_cache() : collection->cache;
+    }
+    uint64_t get_sbid() const {
+      return shared_blob ? shared_blob->get_sbid() : sbid_unloaded;
+    }
+    CollectionRef get_collection() const {
+      return shared_blob ? shared_blob->coll : collection;
+    }
+
     ~Blob();
 
 #ifdef CACHE_BLOB_BL
@@ -851,7 +868,7 @@ public:
     }
     ~Extent() {
       if (blob) {
-	blob->shared_blob->get_cache()->rm_extent();
+	blob->get_cache()->rm_extent();
       }
     }
 
@@ -860,7 +877,7 @@ public:
     void assign_blob(const BlobRef& b) {
       ceph_assert(!blob);
       blob = b;
-      blob->shared_blob->get_cache()->add_extent();
+      blob->get_cache()->add_extent();
     }
 
     // comparators for intrusive_set
@@ -1637,7 +1654,7 @@ private:
 
     BlobRef new_blob() {
       BlobRef b = new Blob();
-      b->set_shared_blob(new SharedBlob(this));
+      b->collection = this;
       return b;
     }
 
@@ -2859,7 +2876,7 @@ private:
     uint64_t offset,
     ceph::buffer::list& bl,
     unsigned flags) {
-    b->dirty_bc().write(b->shared_blob->get_cache(), txc->seq, offset, bl,
+    b->dirty_bc().write(b->get_cache(), txc->seq, offset, bl,
 			     flags);
     txc->blobs_written.insert(b);
   }
