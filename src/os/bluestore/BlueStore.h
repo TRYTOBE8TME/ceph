@@ -644,7 +644,6 @@ public:
       shared_blob = sb;
       collection = sb->coll;
       ceph_assert(get_cache());
-      get_cache()->add_blob();
     }
     BufferSpace bc;
   private:
