@@ -5171,7 +5171,8 @@ void BlueStore::Collection::split_cache(
 	cache->rm_blob();
 	dest->cache->add_blob();
 	SharedBlob* sb = b->shared_blob.get();
-	if (sb && sb->collection == dest && b->collection) {
+        b->collection = dest;
+	if (sb && sb->collection == dest) {
 	  ldout(store->cct, 20) << __func__ << "  already moved " << *sb
 				<< dendl;
 	  return;
@@ -5187,7 +5188,6 @@ void BlueStore::Collection::split_cache(
         if (sb) {
           sb->collection = dest;
         }
-        b->collection = dest;
       };
 
       for (auto& e : o->extent_map.extent_map) {
