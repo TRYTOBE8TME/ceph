@@ -29,6 +29,12 @@
 
 #include "fmt/format.h"
 
+#if defined(BOOST_ASIO_HAS_CO_AWAIT)
+#include <boost/redis/config.hpp>
+using boost::redis::config;
+#endif
+
+
 #define dout_subsys ceph_subsys_rgw
 namespace file::listing {
 
@@ -194,6 +200,7 @@ struct BucketCache : public Notifiable
   uint32_t max_buckets;
   std::atomic<uint64_t> recycle_count;
   std::mutex mtx;
+  std::string notification_option;
 
   /* the bucket lru cache keeps track of the buckets whose listings are
    * being cached in lmdb databases and updated from notify */
@@ -253,6 +260,7 @@ struct BucketCache : public Notifiable
 
 public:
   BucketCache(D* driver, std::string bucket_root, std::string database_root,
+              std::string notification_option,
 	      uint32_t max_buckets=100, uint8_t max_lanes=3,
 	      uint8_t max_partitions=3, uint8_t lmdb_count=3)
     : driver(driver), bucket_root(bucket_root), max_buckets(max_buckets),
@@ -260,7 +268,8 @@ public:
       cache(max_lanes, max_buckets/max_partitions),
       rp(bucket_root),
       lmdbs(database_root, lmdb_count),
-      un(Notify::factory(this, bucket_root))
+      notification_option(notification_option),
+      un(Notify::factory(this, bucket_root, notification_option))
     {
       if (! (sf::exists(rp) && sf::is_directory(rp))) {
 	std::cerr << fmt::format("{} bucket root {} invalid", __func__,
@@ -411,7 +420,15 @@ public:
 
       txn->commit();
       bucket->flags |= BucketCacheEntry<D, B>::FLAG_FILLED;
-      un->add_watch(bucket->name, bucket);
+      if(bucket->bc->notification_option == "Inotify")
+      {
+        un->add_watch(bucket->name, bucket);
+      }
+      else
+      {
+        ldpp_dout(dpp, 0) << "This has entered Redis option" << dendl;
+        un->redis_subscribe(bucket->name, bucket);
+      }
       return rc;
     } /* fill */
 
@@ -579,6 +596,9 @@ public:
 
     GetBucketResult gbr = get_bucket(dpp, bname, BucketCache<D, B>::FLAG_LOCK);
     auto [b /* BucketCacheEntry */, flags] = gbr;
+    std::string publish_message = bde.key.name + "_ADD";
+    ldpp_dout(dpp, 0) << "This is publish message from add " << publish_message << dendl;
+    un->redis_publish(bname, publish_message);
     if (b) {
       unique_lock ulk{b->mtx, std::adopt_lock};
       ulk.unlock();
@@ -613,6 +633,9 @@ public:
 
     GetBucketResult gbr = get_bucket(dpp, bname, BucketCache<D, B>::FLAG_LOCK);
     auto [b /* BucketCacheEntry */, flags] = gbr;
+    std::string publish_message = key.name + "_REMOVE";  // Is this key.name correct?
+    ldpp_dout(dpp, 0) << "This is publish message from delete " << publish_message << dendl;
+    un->redis_publish(bname, publish_message);
     if (b) {
       unique_lock ulk{b->mtx, std::adopt_lock};
       ulk.unlock();
@@ -633,6 +656,8 @@ public:
 
     GetBucketResult gbr = get_bucket(dpp, bname, BucketCache<D, B>::FLAG_LOCK);
     auto [b /* BucketCacheEntry */, flags] = gbr;
+    std::string publish_message = "_INVALID";
+    un->redis_publish(bname, publish_message);
     if (b) {
       unique_lock ulk{b->mtx, std::adopt_lock};
 

@@ -1971,10 +1971,12 @@ int POSIXDriver::initialize(CephContext *cct, const DoutPrefixProvider *dpp)
     new BucketCache(
       this, base_path,
       g_conf().get_val<std::string>("rgw_posix_database_root"),
+      g_conf().get_val<std::string>("rgw_standalone_notification_option"),
       g_conf().get_val<int64_t>("rgw_posix_cache_max_buckets"),
       g_conf().get_val<int64_t>("rgw_posix_cache_lanes"),
       g_conf().get_val<int64_t>("rgw_posix_cache_partitions"),
       g_conf().get_val<int64_t>("rgw_posix_cache_lmdb_count")));
+      //g_conf().get_val<std::string>("rgw_standalone_redis"),
 
   root_dir = std::make_unique<Directory>(base_path, nullptr, ctx());
   ret = root_dir->open(dpp);
@@ -3483,7 +3485,7 @@ int POSIXObject::link_temp_file(const DoutPrefixProvider *dpp, optional_yield y)
     return -EINVAL;
   }
 
-  fill_cache( nullptr, null_yield,
+  fill_cache(dpp, null_yield,
       [&](const DoutPrefixProvider *dpp, rgw_bucket_dir_entry &bde) -> int {
 	driver->get_bucket_cache()->add_entry(dpp, b->get_name(), bde);
 	return 0;
